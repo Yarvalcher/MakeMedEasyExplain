@@ -71,7 +71,7 @@ Create the educational logic enforcing the 5-Layer Cognitive Abstraction Framewo
 ### Phase 4: Science-Proof Validator Agent (Governance Gate)
 Build the automated validator agent checking for factual drift, hallucinations, and prescriptive advice.
 
-*   [ ] **Block 4.1: Validation Logic & Schema Enforcement**
+*   [x] **Block 4.1: Validation Logic & Schema Enforcement**
     *   **Description**: Evaluates educator output against the raw abstract using a structured JSON template:
         ```json
         {
@@ -90,11 +90,17 @@ Build the automated validator agent checking for factual drift, hallucinations, 
 ### Phase 5: Google ADK Orchestration & Routing Loop
 Unify the agents using Google's Agent Development Kit (ADK) with a clean Supervisor-Worker state machine.
 
-*   [ ] **Block 5.1: Agent Router & State Machine**
+*   [x] **Block 5.1: Agent Router & State Machine**
     *   **Description**: The supervisor routes execution states. If the validator fails, it loops back to the educator with feedback.
     *   **Testable Assertions (TDD)**:
         *   `test_supervisor_routes_to_educator_first()`: Validates initial workflow start.
         *   `test_routing_loop_terminates_after_max_retries()`: Prevents infinite agent execution loops.
+*   [ ] **Block 5.2: GitOps Commit Tool & Security Guardrail**
+    *   **Description**: Custom tool to push approved analogies to GitHub, enforcing strict security path constraints.
+    *   **Testable Assertions (TDD)**:
+        *   `test_gitops_commit_blocks_outside_knowledge_base()`: Ensures writing to code files (e.g. `.py`) raises PermissionError.
+        *   `test_gitops_commit_blocks_non_markdown_extensions()`: Ensures writing non-markdown files raises PermissionError.
+        *   `test_gitops_commit_success()`: Mocks the GitHub API PUT request and asserts base64 encoding and payload structure.
 
 ---
 
@@ -115,11 +121,14 @@ Prepare the interface and deploy using Google Vertex AI Reasoning Engine (Tier 0
 ### Automated Tests
 Execute the tests locally using `pytest`:
 ```powershell
-# Run all unit tests
+# Run the complete test suite (unit and integration tests)
+pytest
+
+# Run only unit tests
 pytest tests/unit
 
-# Run specific component tests (e.g. OpenKB loader)
-pytest tests/unit/test_openkb_loader.py
+# Run only live integration tests
+pytest tests/integration
 ```
 
 ### Manual Verification

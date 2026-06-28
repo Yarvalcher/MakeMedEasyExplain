@@ -1,7 +1,35 @@
 import urllib.request
 import urllib.error
+import urllib.parse
+import json
 import xml.etree.ElementTree as ET
 from typing import List
+
+def search_pubmed(query: str, max_results: int = 3) -> List[str]:
+    """Searches PubMed for articles matching the query term and returns a list of PMIDs.
+    
+    Args:
+        query: The search term or keywords (e.g. 'Hepatitis A').
+        max_results: Max number of PMIDs to return.
+        
+    Returns:
+        A list of PubMed ID strings (PMIDs).
+    """
+    cleaned_query = urllib.parse.quote_plus(query.strip())
+    url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term={cleaned_query}&retmode=json&retmax={max_results}"
+    
+    req = urllib.request.Request(
+        url,
+        headers={"User-Agent": "MakeMedEasyExplain/1.0 (https://github.com/Yarvalcher/MakeMedEasyExplain)"}
+    )
+    
+    try:
+        with urllib.request.urlopen(req, timeout=10) as response:
+            res_data = json.loads(response.read().decode("utf-8"))
+            return res_data.get("esearchresult", {}).get("idlist", [])
+    except Exception as e:
+        raise RuntimeError(f"Failed to search PubMed: {e}")
+
 
 def fetch_pubmed_abstract(pmid: str) -> str:
     """Queries the NCBI E-utilities API to retrieve the XML abstract for a given PMID.

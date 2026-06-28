@@ -67,3 +67,19 @@ def test_extract_empty_abstract_raises_parse_error():
         extract_abstract_text(raw_xml)
         
     assert "No abstract text found" in str(exc_info.value)
+
+def test_search_pubmed_success():
+    from MMEE_Agent.pubmed_tool import search_pubmed
+    
+    mock_response = MagicMock()
+    mock_response.__enter__.return_value = mock_response
+    mock_response.read.return_value = b'{"esearchresult": {"idlist": ["111111", "222222"]}}'
+    
+    with patch("urllib.request.urlopen", return_value=mock_response) as mock_urlopen:
+        pmids = search_pubmed("Hepatitis A")
+        
+        assert pmids == ["111111", "222222"]
+        mock_urlopen.assert_called_once()
+        call_args = mock_urlopen.call_args[0][0]
+        assert "term=Hepatitis+A" in call_args.full_url
+

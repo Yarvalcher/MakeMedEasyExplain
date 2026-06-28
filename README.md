@@ -74,7 +74,7 @@ To execute accurate translations without introducing factual errors, the system 
 
 3. **Install Dependencies**:
    ```bash
-   uv pip install google-adk pytest
+   uv pip install -r requirements.txt
    ```
 
 4. **Verify ADK Installation**:
@@ -92,15 +92,25 @@ To execute accurate translations without introducing factual errors, the system 
 ---
 
 ## 🧪 6. Running Tests
-The project relies on Test-Driven Development (TDD). To run the test suite:
+The project relies on Test-Driven Development (TDD). 
+
+To run the complete test suite (unit and integration tests):
+```bash
+pytest
+```
+To run only unit tests:
 ```bash
 pytest tests/unit
+```
+To run the live PubMed integration test:
+```bash
+pytest tests/integration
 ```
 
 ---
 
 ## 📂 7. Project Documentation Index
 * [Project Idea / Overview](file:///c:/Users/yaros/Documents/PortfolioProjects/mademedeasyexplain/MakeMedEasyExplain/docs/project_idea.md)
-* [Decomposed Implementation Phases & Test Blocks](file:///c:/Users/yaros/Documents/PortfolioProjects/mademedeasyexplain/MakeMedEasyExplain/docs/tests.md)
+* [Decomposed Implementation Phases & Tasks](file:///c:/Users/yaros/Documents/PortfolioProjects/mademedeasyexplain/MakeMedEasyExplain/docs/tasks.md)
 * [Software Engineering Design Review](file:///c:/Users/yaros/Documents/PortfolioProjects/mademedeasyexplain/MakeMedEasyExplain/docs/design_review.md)
 * [License (MIT)](file:///c:/Users/yaros/Documents/PortfolioProjects/mademedeasyexplain/MakeMedEasyExplain/LICENSE)
