@@ -51,6 +51,10 @@ Develop a custom tool interfacing with the NCBI Entrez API, parsing XML, and opt
     *   **Testable Assertions (TDD)**:
         *   `test_extract_abstract_strips_nested_html_and_footnotes()`: Input contains markup, output is plain text.
         *   `test_extract_empty_abstract_raises_parse_error()`: Ensures invalid schemas fail gracefully.
+*   [x] **Block 2.3: Web Search Fallback (DuckDuckGo Lite)**
+    *   **Description**: Custom dependency-free tool to fetch and parse web search results for general textbook queries.
+    *   **Testable Assertions (TDD)**:
+        *   `test_web_search_success()`: Mocks the DuckDuckGo HTTP request and verifies snippet extraction and HTML entity normalization.
 
 ---
 

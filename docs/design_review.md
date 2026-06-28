@@ -38,7 +38,7 @@ This document evaluates the architectural design of **MakeMedEasyExplain** again
 ## 🧠 2. KISS (Keep It Simple, Stupid) Alignment
 
 *   **Flat File Architecture & GitOps Raw CDN (OpenKB)**: Instead of requiring an active, paid database cluster (e.g. Pinecone, PostgreSQL with pgvector) for foundational knowledge, the system uses static Markdown files with YAML frontmatter. By using the GitHub Raw CDN as the read path and committing directly to the repo via API on the write path (restricted by strict path and extension validator guardrails), the database remains entirely serverless, version-controlled, and costs $0.00.
-*   **Standard Library XML Parsing**: Instead of adding heavy external dependencies (e.g., BeautifulSoup, lxml), the system extracts the targeted `<AbstractText>` using Python’s native `xml.etree.ElementTree` parser.
+*   **Standard Library XML & HTML Parsing**: Instead of adding heavy external dependencies (e.g. BeautifulSoup, Requests, lxml), the system queries endpoints using standard library `urllib` and parses targeted `<AbstractText>` or DuckDuckGo Lite `'result-snippet'` CSS tables using native XML elements and regex, keeping the application lightweight, fast, and secure.
 *   **Serverless Tier 0 Runtime**: Deployment avoids complex Kubernetes orchestrations or persistent VMs. By leveraging Vertex AI's Reasoning Engine (`InMemoryArtifactService`), the runtime remains entirely stateless and manages operational tracing in transient memory.
 
 ---

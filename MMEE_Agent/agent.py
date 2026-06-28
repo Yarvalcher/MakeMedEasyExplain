@@ -3,6 +3,7 @@ from pathlib import Path
 from MMEE_Agent.pubmed_tool import fetch_pubmed_abstract, extract_abstract_text, search_pubmed
 from MMEE_Agent.openkb_loader import OKFIndexer
 from MMEE_Agent.orchestrator import run_orchestration_loop
+from MMEE_Agent.search_tool import web_search
 
 # Initialize local knowledge indexer pointing to the local knowledge base directory
 local_kb_path = Path(__file__).parent.parent / "knowledge_base"
@@ -101,15 +102,17 @@ root_agent = Agent(
     instruction=(
         "You are the central router for MakeMedEasyExplain. Your job is to help users understand complex medical literature.\n"
         "1. If the user provides a PubMed ID (PMID), fetch it using 'fetch_and_parse_pubmed_abstract'.\n"
-        "2. If they ask about a general medical topic (e.g. Hepatitis, Diabetes, receptor pathways) instead of a specific PMID, search for it using 'search_and_explain_pubmed'.\n"
-        "3. Once you have a raw abstract (either fetched or entered directly), translate it using 'generate_validated_analogy'.\n"
-        "4. If they ask for basic textbook definitions (e.g., cell, receptor, mhc_ii), look them up in the local files using 'search_local_biology_textbook'.\n"
+        "2. If they ask a general comparison or definition question (e.g. 'what is the difference between Hepatitis A, B, and C?'), use 'web_search' to gather facts, then translate those facts into a simplified analogy using 'generate_validated_analogy'.\n"
+        "3. If they ask to search for a specific medical research topic instead of general facts, search for it using 'search_and_explain_pubmed'.\n"
+        "4. Once you have a raw abstract (either fetched or entered directly), translate it using 'generate_validated_analogy'.\n"
+        "5. If they ask for basic textbook definitions (e.g., cell, receptor, mhc_ii), look them up in the local files using 'search_local_biology_textbook'.\n"
         "Always present the simplified analogies clearly to the user."
     ),
     tools=[
         fetch_and_parse_pubmed_abstract,
         generate_validated_analogy,
         search_local_biology_textbook,
-        search_and_explain_pubmed
+        search_and_explain_pubmed,
+        web_search
     ]
 )
