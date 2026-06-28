@@ -82,6 +82,13 @@ To execute accurate translations without introducing factual errors, the system 
    adk --help
    ```
 
+5. **Run the Agent (Web UI)**:
+   Launch the interactive local web interface:
+   ```bash
+   .venv\Scripts\adk web --port 8000 MMEE_Agent
+   ```
+   Once started, open your browser and navigate to `http://127.0.0.1:8000` to interact with the agent.
+
 ---
 
 ## 🧪 6. Running Tests
