@@ -86,6 +86,10 @@ class OKFIndexer:
                 # Skip invalid OKF files in the directory
                 continue
 
+    def reload(self) -> None:
+        self.documents.clear()
+        self.load_directory()
+
     def search(self, query: str) -> List[OKFDocument]:
         # Exact match on concept_id
         if query in self.documents:
@@ -98,4 +102,3 @@ class OKFIndexer:
             if query_lower in doc.concept_id.lower() or query_lower in doc.body.lower():
                 results.append(doc)
         return results
-

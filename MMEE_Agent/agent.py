@@ -1,59 +1,63 @@
+import os
+import re
 from google.adk.agents.llm_agent import Agent
+from google.adk.tools.agent_tool import AgentTool
 from pathlib import Path
-from MMEE_Agent.pubmed_tool import fetch_pubmed_abstract, extract_abstract_text, search_pubmed
-from MMEE_Agent.openkb_loader import OKFIndexer
-from MMEE_Agent.orchestrator import run_orchestration_loop
-from MMEE_Agent.search_tool import web_search
+from MMEE_Agent.tools.openkb_loader import OKFIndexer
+from MMEE_Agent.sub_agents.critic.agent import critic_agent
+from MMEE_Agent.sub_agents.reviser.agent import reviser_agent
+from MMEE_Agent.tools.validator import validate_analogy
+from MMEE_Agent.tools.educator import check_anchoring_compliance
 
 # Initialize local knowledge indexer pointing to the local knowledge base directory
 local_kb_path = Path(__file__).parent.parent / "knowledge_base"
 indexer = OKFIndexer(local_kb_path)
 
-def fetch_and_parse_pubmed_abstract(pmid: str) -> str:
-    """Queries PubMed for a scientific paper's abstract using its PubMed ID (PMID).
+def save_to_knowledge_base(concept_id: str, layer: int, dependencies: list, content: str) -> str:
+    """Saves a validated concept analogy to the local knowledge base as a Markdown file.
     
     Args:
-        pmid: The numerical ID of the PubMed article (e.g. '34351859').
-        
-    Returns:
-        The extracted abstract plain text.
+        concept_id: Unique name for the concept (e.g. 't_cell', 'diabetes_type_1_vs_type_2').
+        layer: Cognitive layer level (1-5).
+        dependencies: List of related parent concepts.
+        content: The validated metaphor/analogy body.
     """
-    try:
-        raw_xml = fetch_pubmed_abstract(pmid)
-        return extract_abstract_text(raw_xml)
-    except Exception as e:
-        return f"Error fetching abstract: {e}"
-
-def generate_validated_analogy(abstract: str) -> str:
-    """Translates a raw scientific abstract into a plain-language, visual analogy.
-    
-    This function runs the supervisor-worker orchestration loop, passing the simplified
-    analogy to the Science-Proof Validator to ensure no prescriptive advice is given
-    and no factual drift/hallucination is introduced.
-    
-    Args:
-        abstract: The raw clinical text abstract to simplify.
+    clean_id = re.sub(r'[^a-zA-Z0-9_]', '', concept_id.lower().strip().replace(" ", "_").replace("-", "_"))
+    if not clean_id:
+        return "Error: Invalid concept_id."
         
-    Returns:
-        The validated safe analogy.
-    """
+    target_dir = Path(__file__).parent.parent / "knowledge_base"
+    target_file = target_dir / f"{clean_id}.md"
+    
+    # Path traversal security guardrail
+    if not os.path.abspath(target_file).startswith(os.path.abspath(target_dir)):
+        return "Security Violation: Access denied."
+        
+    # Format OKF v0.1 headers
+    yaml_header = "---\n"
+    yaml_header += f"concept_id: {clean_id}\n"
+    yaml_header += f"layer: {layer}\n"
+    yaml_header += "dependencies:\n"
+    for dep in dependencies:
+        yaml_header += f"  - {dep}\n"
+    yaml_header += "---\n"
+    
+    full_text = yaml_header + content.strip() + "\n"
+    
     try:
-        result = run_orchestration_loop(abstract, max_retries=3)
-        if result["status"] == "APPROVED":
-            return result["analogy"]
-        else:
-            return f"Validation failed: {result['reasoning']}\n\nLast generated analogy:\n{result['analogy']}"
+        os.makedirs(target_dir, exist_ok=True)
+        with open(target_file, "w", encoding="utf-8") as f:
+            f.write(full_text)
+        indexer.reload() # Reload local memory cache index
+        return f"Saved to local wiki at knowledge_base/{clean_id}.md"
     except Exception as e:
-        return f"Error during simplification: {e}"
+        return f"Failed to save file: {e}"
 
 def search_local_biology_textbook(query: str) -> str:
     """Searches the local OpenKB biology textbook index for foundational definitions.
     
     Args:
         query: The term or concept to look up (e.g., 'mhc_ii', 't_cell').
-        
-    Returns:
-        A list of matching concepts with their layers, dependencies, and descriptions.
     """
     try:
         docs = indexer.search(query)
@@ -73,46 +77,56 @@ def search_local_biology_textbook(query: str) -> str:
     except Exception as e:
         return f"Error searching local knowledge base: {e}"
 
-def search_and_explain_pubmed(query: str) -> str:
-    """Searches PubMed for a medical topic (e.g., 'Hepatitis'), fetches the top match, and returns a simplified analogy.
+def run_scientific_and_educational_audit(analogy: str, abstract: str) -> str:
+    """Audits the generated analogy for scientific correctness and concept anchoring compliance.
     
     Args:
-        query: The medical topic or keywords to search for.
+        analogy: The generated visual analogy/explanation.
+        abstract: The raw medical facts or abstract.
         
     Returns:
-        The validated analogy for the top matching article.
+        A status string indicating whether the analogy is APPROVED or REJECTED with specific feedback.
     """
-    try:
-        pmids = search_pubmed(query, max_results=1)
-        if not pmids:
-            return f"No PubMed articles found for query '{query}'."
-        pmid = pmids[0]
-        abstract = fetch_and_parse_pubmed_abstract(pmid)
-        analogy = generate_validated_analogy(abstract)
-        return f"Top PubMed Match (PMID: {pmid}):\n\n{analogy}"
-    except Exception as e:
-        return f"Error searching and simplifying: {e}"
+    # 1. Run scientific validation (medical advice & percentages)
+    val_res = validate_analogy(analogy, abstract)
+    if val_res["status"] == "REJECTED":
+        return f"REJECTED: Scientific validation failed. Reason: {val_res['reasoning']}"
+        
+    # 2. Run educational anchoring verification
+    anchoring_passed = check_anchoring_compliance(analogy)
+    if not anchoring_passed:
+        return "REJECTED: Educational validation failed. Reason: The analogy explains Layer 4/5 terms without anchoring them in familiar Layer 2/3 blocks."
+        
+    return "APPROVED: Analogy passed all scientific and educational validation gates."
 
 
-# Define the root Supervisor Agent
-root_agent = Agent(
+# ==========================================
+# 👑 Define Supervisor Agent (LLM Auditor)
+# ==========================================
+
+llm_auditor = Agent(
     model='gemini-2.5-flash',
-    name='MMEE_Agent',
+    name='llm_auditor',
     description='MakeMedEasyExplain Supervisor Agent - democratizes medical literature.',
     instruction=(
-        "You are the central router for MakeMedEasyExplain. Your job is to help users understand complex medical literature.\n"
-        "1. If the user provides a PubMed ID (PMID), fetch it using 'fetch_and_parse_pubmed_abstract'.\n"
-        "2. If they ask a general comparison or definition question (e.g. 'what is the difference between Hepatitis A, B, and C?'), use 'web_search' to gather facts, then translate those facts into a simplified analogy using 'generate_validated_analogy'.\n"
-        "3. If they ask to search for a specific medical research topic instead of general facts, search for it using 'search_and_explain_pubmed'.\n"
-        "4. Once you have a raw abstract (either fetched or entered directly), translate it using 'generate_validated_analogy'.\n"
-        "5. If they ask for basic textbook definitions (e.g., cell, receptor, mhc_ii), look them up in the local files using 'search_local_biology_textbook'.\n"
-        "Always present the simplified analogies clearly to the user."
+        "You are the LLM Auditor (Supervisor). Your job is to coordinate the translation of complex medical queries into safe, simplified analogies.\n"
+        "When a user asks a question:\n"
+        "1. First call 'search_local_biology_textbook' to see if we already have the definition/facts stored locally.\n"
+        "2. If not found locally, call 'critic_agent' to gather and verify the scientific truth about the query.\n"
+        "3. Pass the verified facts from 'critic_agent' directly to 'reviser_agent' to translate them into a simple, visual analogy.\n"
+        "4. Once you receive the analogy, call 'run_scientific_and_educational_audit' to verify that the analogy is safe and complies with anchoring rules.\n"
+        "5. If the audit is REJECTED, ask 'reviser_agent' to revise the analogy based on the feedback.\n"
+        "6. If APPROVED, call 'save_to_knowledge_base' to save the validated analogy as a local Markdown file under the 'knowledge_base' folder (use a clean snake_case slug for the concept_id, layer=3, dependencies=[]).\n"
+        "7. Present the final approved analogy clearly to the user, confirming that it has been saved to the wiki."
     ),
     tools=[
-        fetch_and_parse_pubmed_abstract,
-        generate_validated_analogy,
+        AgentTool(agent=critic_agent),
+        AgentTool(agent=reviser_agent),
         search_local_biology_textbook,
-        search_and_explain_pubmed,
-        web_search
+        run_scientific_and_educational_audit,
+        save_to_knowledge_base
     ]
 )
+
+# Bind the llm_auditor as the entry point root_agent
+root_agent = llm_auditor

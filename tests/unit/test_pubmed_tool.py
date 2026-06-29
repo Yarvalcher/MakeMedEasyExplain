@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 import urllib.error
 import xml.etree.ElementTree as ET
-from MMEE_Agent.pubmed_tool import fetch_pubmed_abstract, extract_abstract_text
+from MMEE_Agent.tools.pubmed_tool import fetch_pubmed_abstract, extract_abstract_text
 
 def test_fetch_pubmed_abstract_success():
     # Mocking standard HTTP response
@@ -69,7 +69,7 @@ def test_extract_empty_abstract_raises_parse_error():
     assert "No abstract text found" in str(exc_info.value)
 
 def test_search_pubmed_success():
-    from MMEE_Agent.pubmed_tool import search_pubmed
+    from MMEE_Agent.tools.pubmed_tool import search_pubmed
     
     mock_response = MagicMock()
     mock_response.__enter__.return_value = mock_response

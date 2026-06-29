@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from MMEE_Agent.openkb_loader import parse_okf_file, OKFDocument
+from MMEE_Agent.tools.openkb_loader import parse_okf_file, OKFDocument
 
 def test_parse_valid_okf_file(tmp_path: Path):
     # Create a dummy OKF v0.1 file
@@ -45,7 +45,7 @@ MHC-II processing pathways are crucial for presenting antigens.
     assert "YAML parsing error" in str(exc_info.value) or "invalid" in str(exc_info.value).lower()
 
 def test_search_exact_match_retrieves_correct_concept(tmp_path: Path):
-    from MMEE_Agent.openkb_loader import OKFIndexer
+    from MMEE_Agent.tools.openkb_loader import OKFIndexer
     
     # Create two different OKF files in the temp directory
     doc1_content = """---
@@ -80,7 +80,7 @@ T-cells recognize antigens presented by MHC molecules.
     assert results_t[0].concept_id == "t_cell"
 
 def test_search_returns_empty_on_missing_concept(tmp_path: Path):
-    from MMEE_Agent.openkb_loader import OKFIndexer
+    from MMEE_Agent.tools.openkb_loader import OKFIndexer
     
     indexer = OKFIndexer(tmp_path)
     results = indexer.search("non_existent_concept")

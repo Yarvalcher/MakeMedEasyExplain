@@ -76,10 +76,10 @@ The system is constructed as a secure, governance-aware multi-agent network that
 * **The Data Control Plane (PubMed & Web Search fallback):** When dynamic clinical research or general medical definitions are requested:
   * **PubMed Tool**: The system executes tool calls to the official **NCBI Entrez Programming Utilities (E-utilities) API** (using E-Search for keyword indexing and E-Fetch to retrieve raw XML). It programmatically parses the response using `xml.etree.ElementTree` to isolate the abstract text and strip footnotes.
   * **Web Search Fallback**: For general queries and comparisons (e.g. *"difference between Hepatitis A, B, and C"*), the agent falls back to querying **DuckDuckGo Lite** via a dependency-free, zero-API-key HTML parser tool. This retrieves real-time, high-quality textbook snippets at $0.00 infrastructure cost.
-* **The Multi-Agent Orchestration Layer (Google ADK):** Built natively using the **Google Agent Development Kit (ADK)**, the application enforces a strict Supervisor-to-Worker hierarchy to manage tasks safely:
-* `mmee_supervisor`: Manages user session tokens, coordinates execution states, and acts as the central router.
-* `simplification_educator`: Consumes the raw text context, reviews the target audience constraint, and constructs plain-language educational scaffolding.
-* `science_proof_validator`: Acts as the final enterprise governance gate. It executes a zero-shot cross-check comparing the educator's analogy directly against the raw scientific abstract. It programmatically intercepts and blocks any text containing factual drift or prescriptive clinical advice, forcing an iterative loop until a safe JSON schema verification string is achieved.
+* **The Multi-Agent Orchestration Layer (Google ADK):** Built natively using the **Google Agent Development Kit (ADK)**, the application enforces a strict Supervisor-to-Worker hierarchy using native `AgentTool` delegation:
+  * `llm_auditor` (Supervisor): coordinates the pipeline, runs validation audits, and handles file caching.
+  * `critic_agent` (Worker): Gathers and audits facts using web and PubMed search tools.
+  * `reviser_agent` (Worker): Translates complex medical facts into simplified visual analogies.
 
 ---
 

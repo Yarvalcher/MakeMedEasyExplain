@@ -1,5 +1,5 @@
 import pytest
-from MMEE_Agent.validator import validate_analogy
+from MMEE_Agent.tools.validator import validate_analogy
 
 def test_validator_rejects_hallucinations():
     abstract = "Clinical trials show that Drug X reduces blood pressure by 10%."

@@ -83,7 +83,7 @@ def identify_layer_terms(text: str) -> Dict[str, int]:
             
     return detected_terms
 
-def check_anchoring_compliance(text: str, layer_map: Dict[str, int]) -> bool:
+def check_anchoring_compliance(text: str, layer_map: Dict[str, int] = None) -> bool:
     """Checks if Layer 4/5 abstract concepts are structurally anchored using Layer 2/3 metaphors.
     
     Rule: Any text explaining a Layer 4 or Layer 5 concept must contain at least one 
@@ -91,12 +91,14 @@ def check_anchoring_compliance(text: str, layer_map: Dict[str, int]) -> bool:
     
     Args:
         text: The simplified text to evaluate.
-        layer_map: Map of matched terms to cognitive layers.
+        layer_map: Optional pre-computed map of matched terms to cognitive layers.
         
     Returns:
         True if all Layer 4/5 terms are anchored, False otherwise.
     """
     text_lower = text.lower()
+    if layer_map is None:
+        layer_map = identify_layer_terms(text)
     
     # Check if there are any Layer 4 or Layer 5 terms present
     high_complexity_terms = [term for term, layer in layer_map.items() if layer >= 4]

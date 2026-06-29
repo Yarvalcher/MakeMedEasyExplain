@@ -1,5 +1,5 @@
 import pytest
-from MMEE_Agent.educator import identify_layer_terms, check_anchoring_compliance
+from MMEE_Agent.tools.educator import identify_layer_terms, check_anchoring_compliance
 
 def test_identify_layer_terms():
     text = "An antibody binds to the cell receptor to prevent infection."

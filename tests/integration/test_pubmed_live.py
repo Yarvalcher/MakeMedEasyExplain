@@ -1,5 +1,5 @@
 import pytest
-from MMEE_Agent.pubmed_tool import fetch_pubmed_abstract, extract_abstract_text
+from MMEE_Agent.tools.pubmed_tool import fetch_pubmed_abstract, extract_abstract_text
 
 def test_live_pubmed_fetch_and_parse():
     # A known stable PubMed ID (PMID)

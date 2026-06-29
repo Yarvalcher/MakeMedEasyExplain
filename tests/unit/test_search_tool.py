@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from MMEE_Agent.search_tool import web_search
+from MMEE_Agent.tools.search_tool import web_search
 
 def test_web_search_success():
     mock_response = MagicMock()

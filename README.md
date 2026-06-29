@@ -37,12 +37,30 @@ To execute accurate translations without introducing factual errors, the system 
 ---
 
 ## 🧱 3. System Architecture & Technical Implementation
-* **The Ingestion & Caching Layer (OpenKB & OKF v0.1):** Local knowledge base processed via flat Markdown files backed by YAML frontmatter.
-* **The Data Control Plane (PubMed MCP Tool):** Dynamic fetching via PubMed API parsed using Python's native `xml.etree.ElementTree`.
-* **The Multi-Agent Orchestration Layer (Google ADK)**: Strict Supervisor-Worker hierarchy:
-  * `mmee_supervisor`: Manages user session tokens, coordinates execution states, and acts as the central router.
-  * `simplification_educator`: Constructs plain-language educational scaffolding.
-  * `science_proof_validator`: Zero-shot cross-check validator comparing analogies against raw scientific text. Rejects factual drift or prescriptive advice.
+* **The Ingestion & Caching Layer (OpenKB, OKF v0.1 & GitOps Raw CDN):** Reads cached textbook definitions directly from the GitHub Raw CDN, caching new approved explanations locally at runtime.
+* **The Data Control Plane (PubMed & Web Search fallback):** Fetches dynamic facts from PubMed API (E-utilities) or DuckDuckGo Lite (fallback) using dependency-free, standard library parsing.
+* **The Multi-Agent Orchestration Layer (Google ADK)**: Hierarchical agent team using native `AgentTool` delegation:
+  * `llm_auditor` (Supervisor): Coordinates the pipeline, runs validation gates, and caches approved analogies.
+  * `critic_agent` (Worker): Gathers and audits facts using web and PubMed search tools to establish "scientific truth".
+  * `reviser_agent` (Worker): Translates complex medical facts into simplified visual analogies.
+
+### 📂 3.1 Refactored Package Structure
+The codebase isolates sub-agents and tool libraries into structured folders for maximum modularity and scalability:
+```text
+MMEE_Agent/
+├── agent.py               # Root Entry Point (llm_auditor supervisor configuration)
+├── sub_agents/            # Agent Configuration Folder
+│   ├── critic/
+│   │   └── agent.py       # critic_agent (connected to search & PubMed tools)
+│   └── reviser/
+│       └── agent.py       # reviser_agent (simplification educator)
+└── tools/                 # Standalone Tool Utilities Folder
+    ├── educator.py        # concept anchoring & layer maps checks
+    ├── openkb_loader.py   # local OpenKB textbook indexer
+    ├── pubmed_tool.py     # PubMed API E-utilities fetchers
+    ├── search_tool.py     # DuckDuckGo Lite free scraping search
+    └── validator.py       # factual drift & safety audit gates
+```
 
 ---
 
