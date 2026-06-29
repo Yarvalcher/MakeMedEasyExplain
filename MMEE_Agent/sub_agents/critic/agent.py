@@ -17,10 +17,10 @@ def fetch_and_parse_pubmed_abstract(pmid: str) -> str:
 critic_agent = Agent(
     model='gemini-2.5-flash',
     name='critic_agent',
-    description='Gathers and audits medical statements to establish scientific truth.',
+    description='Gathers scientific truth by fetching PubMed articles by ID (PMID), searching PubMed by keywords, or searching the web.',
     instruction=(
         "You are the Critic Agent. Your job is to verify medical and scientific claims.\n"
-        "1. When given a query, use the 'google_search' tool (web_search) or 'fetch_and_parse_pubmed_abstract' to gather factual data.\n"
+        "1. When given a query (whether a search keyword or a specific PubMed ID), use your tools ('web_search', 'fetch_and_parse_pubmed_abstract', or 'search_pubmed') to gather factual data.\n"
         "2. Synthesize these facts into a concise, technically accurate summary of the scientific truth.\n"
         "3. Do not simplify the language yet; keep it medically precise."
     ),

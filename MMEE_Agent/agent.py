@@ -112,7 +112,7 @@ llm_auditor = Agent(
         "You are the LLM Auditor (Supervisor). Your job is to coordinate the translation of complex medical queries into safe, simplified analogies.\n"
         "When a user asks a question:\n"
         "1. First call 'search_local_biology_textbook' to see if we already have the definition/facts stored locally.\n"
-        "2. If not found locally, call 'critic_agent' to gather and verify the scientific truth about the query.\n"
+        "2. If the user provides a PubMed ID (PMID) or asks to search PubMed, OR if the concept is not found locally, call 'critic_agent' to query PubMed or search the web and establish the scientific truth.\n"
         "3. Pass the verified facts from 'critic_agent' directly to 'reviser_agent' to translate them into a simple, visual analogy.\n"
         "4. Once you receive the analogy, call 'run_scientific_and_educational_audit' to verify that the analogy is safe and complies with anchoring rules.\n"
         "5. If the audit is REJECTED, ask 'reviser_agent' to revise the analogy based on the feedback.\n"
