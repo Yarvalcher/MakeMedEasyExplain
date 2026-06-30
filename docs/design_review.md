@@ -9,9 +9,9 @@ This document evaluates the architectural design of **MakeMedEasyExplain** again
 ### 🎯 Single Responsibility Principle (SRP)
 *Each component or module must have exactly one reason to change.*
 *   **Separation of Agent Concerns**:
-    *   `mmee_supervisor`: Manages user session state and coordinates orchestration. It does not contain prompt logic or translation heuristics.
-    *   `simplification_educator`: Focused entirely on metaphor generation, vocabulary translation, and cognitive layer compliance.
-    *   `science_proof_validator`: Responsible solely for checking correctness, enforcing schema validation, and preventing prescriptive medical advice.
+    *   `llm_auditor`: Manages user session state and coordinates orchestration. It does not contain prompt logic or translation heuristics.
+    *   `reviser_agent`: Focused entirely on metaphor generation, vocabulary translation, and cognitive layer compliance.
+    *   `critic_agent`: Responsible solely for checking correctness, enforcing schema validation, and preventing prescriptive medical advice.
 *   **Decoupled Parsers**: XML parsing (parsing PubMed data via `ElementTree`) is isolated to a dedicated tool, preventing HTML/XML cleanup code from polluting core agent logic.
 
 ### 🔌 Open/Closed Principle (OCP)
@@ -21,12 +21,12 @@ This document evaluates the architectural design of **MakeMedEasyExplain** again
 
 ### 📐 Liskov Substitution Principle (LSP)
 *Subtypes must be substitutable for their base types.*
-*   **Standardized Agent Interfaces**: The workers (Educator, Validator) share a common agent base class from the Google ADK. The Supervisor executes them interchangeably within the orchestration runner without knowing their internal reasoning configurations.
+*   **Standardized Agent Interfaces**: The workers (`reviser_agent`, `critic_agent`) share a common agent base class from the Google ADK. The Supervisor (`llm_auditor`) delegates tasks to them interchangeably as tools using `AgentTool` without knowing their internal reasoning configurations.
 *   **Tool Schema Compliance**: All query interfaces conform to the same function-calling interfaces, making local and remote document resolvers interchangeable.
 
 ### 🧹 Interface Segregation Principle (ISP)
 *Clients should not be forced to depend on interfaces they do not use.*
-*   **Minimal Tool Exposure**: Workers only receive access to the specific tools they require. For example, the `science_proof_validator` does not have access to the PubMed API tool or local files; it only receives the outputs of the Educator and the raw abstract, minimizing security risk and prompt pollution.
+*   **Minimal Tool Exposure**: Workers only receive access to the specific tools they require. For example, the `reviser_agent` does not have access to search or PubMed tools; it only translates facts to analogies, minimizing security risk and prompt pollution.
 
 ### 🏗️ Dependency Inversion Principle (DIP)
 *High-level modules should not depend on low-level modules; both should depend on abstractions.*

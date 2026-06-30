@@ -8,11 +8,11 @@ Decompose the implementation of **MakeMedEasyExplain** into testable, isolated e
 
 ```mermaid
 graph TD
-    User([User Request]) --> Supervisor[mmee_supervisor]
+    User([User Request]) --> Supervisor[llm_auditor]
     Supervisor --> LocalKB[Local Knowledge Base / OpenKB Search]
-    Supervisor --> PubMedMCP[PubMed MCP Tool]
-    Supervisor --> Educator[simplification_educator]
-    Educator --> Validator[science_proof_validator]
+    Supervisor --> PubMedMCP[PubMed MCP / Critic Agent]
+    Supervisor --> Educator[reviser_agent]
+    Educator --> Validator[run_scientific_and_educational_audit]
     Validator -- "Fail (Factual Drift / Prescriptive Advice)" --> Educator
     Validator -- "Pass (Safe JSON)" --> Supervisor
     Supervisor --> User
@@ -58,7 +58,7 @@ Develop a custom tool interfacing with the NCBI Entrez API, parsing XML, and opt
 
 ---
 
-### Phase 3: Simplification Educator Agent (Concept Anchoring)
+### Phase 3: Reviser Agent (Concept Anchoring)
 Create the educational logic enforcing the 5-Layer Cognitive Abstraction Framework and the Concept Anchoring rule.
 
 *   [x] **Block 3.1: Cognitive Layer Evaluator**
@@ -72,8 +72,8 @@ Create the educational logic enforcing the 5-Layer Cognitive Abstraction Framewo
 
 ---
 
-### Phase 4: Science-Proof Validator Agent (Governance Gate)
-Build the automated validator agent checking for factual drift, hallucinations, and prescriptive advice.
+### Phase 4: Scientific & Educational Audit (Governance Gate)
+Build the automated validation audit checking for factual drift, hallucinations, and prescriptive advice.
 
 *   [x] **Block 4.1: Validation Logic & Schema Enforcement**
     *   **Description**: Evaluates educator output against the raw abstract using a structured JSON template:
@@ -99,7 +99,7 @@ Unify the agents using Google's Agent Development Kit (ADK) with a clean Supervi
     *   **Testable Assertions (TDD)**:
         *   `test_supervisor_routes_to_educator_first()`: Validates initial workflow start.
         *   `test_routing_loop_terminates_after_max_retries()`: Prevents infinite agent execution loops.
-*   [ ] **Block 5.2: GitOps Commit Tool & Security Guardrail**
+*   [x] **Block 5.2: GitOps Commit Tool & Security Guardrail**
     *   **Description**: Custom tool to push approved analogies to GitHub, enforcing strict security path constraints.
     *   **Testable Assertions (TDD)**:
         *   `test_gitops_commit_blocks_outside_knowledge_base()`: Ensures writing to code files (e.g. `.py`) raises PermissionError.

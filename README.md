@@ -20,7 +20,7 @@ MakeMedEasyExplain is an autonomous, multi-agent AI system built on Google Cloud
 ## 📋 1. Executive Summary & Problem Statement
 Every day, peer-reviewed medical discoveries are published on platforms like PubMed. However, this critical knowledge remains locked behind dense, clinical terminology. Non-medical workers, patients, and healthcare students frequently face cognitive overload.
 
-**MedMadeEasyExplain** grounds its reasoning strictly in verified repositories and employs an automated **Science-Proof Validation Loop** to programmatically intercept and eliminate medical misinformation before it reaches the consumer.
+**MakeMedEasyExplain** grounds its reasoning strictly in verified repositories and employs an automated **Science-Proof Validation Loop** to programmatically intercept and eliminate medical misinformation before it reaches the consumer.
 
 ---
 
@@ -114,15 +114,15 @@ The project relies on Test-Driven Development (TDD).
 
 To run the complete test suite (unit and integration tests):
 ```bash
-pytest
+uv run pytest
 ```
 To run only unit tests:
 ```bash
-pytest tests/unit
+uv run pytest tests/unit
 ```
 To run the live PubMed integration test:
 ```bash
-pytest tests/integration
+uv run pytest tests/integration
 ```
 
 ---
