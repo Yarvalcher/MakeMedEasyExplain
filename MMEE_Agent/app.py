@@ -29,7 +29,7 @@ def slugify(text: str) -> str:
     return re.sub(r'[^a-zA-Z0-9_]', '', text.lower().strip().replace(" ", "_").replace("-", "_"))
 
 async def run_agent_pipeline(query: str):
-    """Executes the ADK multi-agent pipeline using the Runner engine."""
+    """Executes the ADK multi-agent pipeline using the Runner engine with backoff retries for rate limits."""
     session_service = InMemorySessionService()
     # Create unique session for the query transaction
     session_id = f"sess_{os.urandom(4).hex()}"
@@ -37,25 +37,36 @@ async def run_agent_pipeline(query: str):
     
     runner = Runner(agent=root_agent, app_name="MakeMedEasyExplain", session_service=session_service)
     
-    final_response = ""
-    # Collect asynchronous event streams from the runner
-    async for event in runner.run_async(
-        user_id="user",
-        session_id=session_id,
-        new_message=types.Content(role="user", parts=[types.Part.from_text(text=query)])
-    ):
-        if event.is_final_response():
-            if event.content and event.content.parts:
-                final_response = event.content.parts[0].text
-            
-    return final_response
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            final_response = ""
+            # Collect asynchronous event streams from the runner
+            async for event in runner.run_async(
+                user_id="user",
+                session_id=session_id,
+                new_message=types.Content(role="user", parts=[types.Part.from_text(text=query)])
+            ):
+                if event.is_final_response():
+                    if event.content and event.content.parts:
+                        final_response = event.content.parts[0].text
+            return final_response
+        except Exception as e:
+            error_str = str(e)
+            if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+                if attempt < max_retries - 1:
+                    sleep_time = 4 * (attempt + 1)
+                    print(f"⚠️ Gemini API rate limited (429). Retrying in {sleep_time} seconds (Attempt {attempt + 1}/{max_retries})...")
+                    await asyncio.sleep(sleep_time)
+                    continue
+            raise e
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/translate', methods=['POST'])
-def translate():
+async def translate():
     data = request.get_json() or {}
     query = data.get('query', '').strip()
     
@@ -63,8 +74,8 @@ def translate():
         return jsonify({"error": "Query cannot be empty."}), 400
         
     try:
-        # Run async pipeline synchronously using standard asyncio.run
-        response_text = asyncio.run(run_agent_pipeline(query))
+        # Await the async pipeline directly on Flask's native event loop
+        response_text = await run_agent_pipeline(query)
         
         # Check if the output contains save info
         filename = f"{slugify(query[:30])}.md"

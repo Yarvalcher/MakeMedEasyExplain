@@ -1,4 +1,5 @@
 from google.adk.agents.llm_agent import Agent
+from google.genai import types
 from MMEE_Agent.tools.search_tool import web_search
 from MMEE_Agent.tools.pubmed_tool import fetch_pubmed_abstract, extract_abstract_text, search_pubmed
 
@@ -18,6 +19,11 @@ critic_agent = Agent(
     model='gemini-2.5-flash',
     name='critic_agent',
     description='Gathers scientific truth by fetching PubMed articles by ID (PMID), searching PubMed by keywords, or searching the web.',
+    generate_content_config=types.GenerateContentConfig(
+        http_options=types.HttpOptions(
+            retry_options=types.HttpRetryOptions(initial_delay=1.0, attempts=3)
+        )
+    ),
     instruction=(
         "You are the Critic Agent. Your job is to verify medical and scientific claims.\n"
         "1. When given a query (whether a search keyword or a specific PubMed ID), use your tools ('web_search', 'fetch_and_parse_pubmed_abstract', or 'search_pubmed') to gather factual data.\n"

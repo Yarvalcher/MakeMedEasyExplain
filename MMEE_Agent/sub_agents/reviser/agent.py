@@ -1,9 +1,16 @@
 from google.adk.agents.llm_agent import Agent
 
+from google.genai import types
+
 reviser_agent = Agent(
     model='gemini-2.5-flash',
     name='reviser_agent',
     description='Translates verified medical facts into simplified visual analogies.',
+    generate_content_config=types.GenerateContentConfig(
+        http_options=types.HttpOptions(
+            retry_options=types.HttpRetryOptions(initial_delay=1.0, attempts=3)
+        )
+    ),
     instruction=(
         "You are the Reviser Agent (Simplification Educator).\n"
         "Your task is to take medically precise facts and translate them into a simple, visual metaphor or analogy appropriate for the general public.\n"

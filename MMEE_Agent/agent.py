@@ -2,6 +2,7 @@ import os
 import re
 from google.adk.agents.llm_agent import Agent
 from google.adk.tools.agent_tool import AgentTool
+from google.genai import types
 from pathlib import Path
 from MMEE_Agent.tools.openkb_loader import OKFIndexer
 from MMEE_Agent.sub_agents.critic.agent import critic_agent
@@ -108,6 +109,11 @@ llm_auditor = Agent(
     model='gemini-2.5-flash',
     name='llm_auditor',
     description='MakeMedEasyExplain Supervisor Agent - democratizes medical literature.',
+    generate_content_config=types.GenerateContentConfig(
+        http_options=types.HttpOptions(
+            retry_options=types.HttpRetryOptions(initial_delay=1.0, attempts=3)
+        )
+    ),
     instruction=(
         "You are the LLM Auditor (Supervisor). Your job is to coordinate the translation of complex medical queries into safe, simplified analogies.\n"
         "When a user asks a question:\n"
@@ -117,7 +123,8 @@ llm_auditor = Agent(
         "4. Once you receive the analogy, call 'run_scientific_and_educational_audit' to verify that the analogy is safe and complies with anchoring rules.\n"
         "5. If the audit is REJECTED, ask 'reviser_agent' to revise the analogy based on the feedback.\n"
         "6. If APPROVED, call 'save_to_knowledge_base' to save the validated analogy as a local Markdown file under the 'knowledge_base' folder (use a clean snake_case slug for the concept_id, layer=3, dependencies=[]).\n"
-        "7. Present the final approved analogy clearly to the user, confirming that it has been saved to the wiki."
+        "7. Present the final approved analogy clearly to the user, confirming that it has been saved to the wiki.\n"
+        "8. CITATION RULE: If the facts were fetched from PubMed, always append a citation block to the end of the final analogy output. Format it exactly as: 'Source: [PubMed ID: <PMID>](https://pubmed.ncbi.nlm.nih.gov/<PMID>/)'. Ensure you replace <PMID> with the actual ID used during research."
     ),
     tools=[
         AgentTool(agent=critic_agent),

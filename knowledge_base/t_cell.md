@@ -5,4 +5,4 @@ dependencies:
   - cell
   - mhc_ii
 ---
-A T cell is a type of lymphocyte that plays a central role in the immune response. T cells can be distinguished from other lymphocytes by the presence of a T-cell receptor on their cell surface. They originate in the bone marrow and mature in the thymus.
+Imagine T cells are like your body's **special forces agents**. They're born in the **bone marrow factory** and then head to a **training academy in the thymus** to learn their specific missions. Each agent has a **unique radar dish** (T-cell receptor) on its surface, like a special scanner, that helps it identify and zero in on specific invaders!

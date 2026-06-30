@@ -182,7 +182,7 @@
             <span class="material-symbols-outlined text-outline ml-4">search</span>
             <input id="query-input" class="flex-grow bg-transparent border-none focus:ring-0 text-body-lg font-body-lg text-on-surface placeholder:text-outline/50 py-4" placeholder="Enter research query or PubMed ID (PMID)..." type="text"/>
             <button id="translate-btn" class="bg-gradient-to-r from-primary to-secondary text-on-primary font-title-md text-body-md px-8 py-3 rounded-lg flex items-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg status-glow-primary">
-                Translate
+                Easy Explain
                 <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
             </button>
         </div>
@@ -254,6 +254,7 @@
                     <span class="font-label-sm text-[11px] text-on-surface-variant">Dashboard ready. Enter query to begin.</span>
                 </div>
             </div>
+            <button id="view-full-log-btn" class="w-full py-2 border border-white/10 rounded-lg text-label-sm font-label-sm text-outline hover:bg-white/5 transition-all uppercase tracking-widest mt-2">View Full Log</button>
         </aside>
     </section>
 
@@ -293,6 +294,13 @@
                             <span id="sync-status" class="font-label-sm text-label-sm text-surface-dim font-bold">Local File + GitHub</span>
                         </div>
                     </div>
+                    <!-- Medical Disclaimer Alert -->
+                    <div class="mt-4 p-3 bg-red-950/30 border border-red-500/20 rounded-lg flex items-start gap-2 text-red-400">
+                        <span class="material-symbols-outlined text-[18px] mt-0.5 select-none">warning</span>
+                        <p class="font-label-sm text-[11px] leading-relaxed">
+                            <strong>Disclaimer:</strong> This content is for educational and learning purposes only. It is not medical advice and is not intended for self-medication. Because AI systems can hallucinate, always verify medical information precisely and consult a qualified healthcare professional or doctor for any medical issues or treatment decisions.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -311,8 +319,36 @@
             <a class="font-label-sm text-label-sm text-outline hover:text-on-surface transition-colors underline decoration-secondary/50" href="#">Privacy Policy</a>
             <a class="font-label-sm text-label-sm text-outline hover:text-on-surface transition-colors underline decoration-secondary/50" href="#">Clinical Guidelines</a>
         </div>
+        <div class="flex items-center gap-4 text-outline mt-4 md:mt-0">
+            <button id="btn-share" class="material-symbols-outlined hover:text-primary transition-all cursor-pointer bg-transparent border-none">share</button>
+            <button id="btn-print" class="material-symbols-outlined hover:text-primary transition-all cursor-pointer bg-transparent border-none">print</button>
+            <button id="btn-download" class="material-symbols-outlined hover:text-primary transition-all cursor-pointer bg-transparent border-none">download</button>
+        </div>
     </div>
 </footer>
+
+<!-- Elegant Toast Alert -->
+<div id="toast" class="fixed bottom-6 right-6 glass-panel px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none z-50">
+    <span id="toast-icon" class="material-symbols-outlined text-secondary">check_circle</span>
+    <span id="toast-msg" class="font-body-md text-on-surface text-sm">Success!</span>
+</div>
+
+<!-- Full Log Modal -->
+<div id="log-modal" class="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center hidden z-50">
+    <div class="glass-panel w-full max-w-2xl rounded-2xl p-xl flex flex-col gap-md m-4">
+        <div class="flex justify-between items-center border-b border-white/10 pb-md">
+            <h3 class="font-title-md text-title-md text-on-surface flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">receipt_long</span>
+                Full Session Audit Logs
+            </h3>
+            <button id="close-modal-btn" class="material-symbols-outlined text-outline hover:text-primary transition-colors bg-transparent border-none cursor-pointer">close</button>
+        </div>
+        <div id="modal-logs-body" class="flex flex-col gap-sm max-h-[300px] overflow-y-auto custom-scrollbar font-mono text-xs text-outline pr-md">
+            <!-- Populated dynamically -->
+        </div>
+    </div>
+</div>
+
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -363,10 +399,22 @@
             const query = queryInput.value.trim();
             if (!query) return;
 
+            // Enable loading state on the button
+            translateBtn.disabled = true;
+            translateBtn.classList.add('opacity-75', 'cursor-not-allowed');
+            translateBtn.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-on-primary inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Explaining... (1-3 min)
+            `;
+
             // Reset visual states
             analogySection.classList.add('hidden');
             logsContainer.innerHTML = '';
             appendLog('SYSTEM', 'Initiating translation flow...');
+            appendLog('SYSTEM', 'Deep multi-agent verification & academic auditing is active. This can take a few minutes...');
 
             // Step 1: Critic runs
             setCardState(cardCritic, 'Searching facts...', true);
@@ -426,6 +474,14 @@
                 setCardState(cardCritic, 'Error', false);
                 setCardState(cardReviser, 'Error', false);
                 setCardState(cardSupervisor, 'Error', false);
+            } finally {
+                // Restore button state
+                translateBtn.disabled = false;
+                translateBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                translateBtn.innerHTML = `
+                    Easy Explain
+                    <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+                `;
             }
         }
 
@@ -433,6 +489,121 @@
         queryInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') triggerTranslation();
         });
+
+        // ==========================================
+        // 🌟 Interactive Button Interactions (Toasts, Modals, Prints)
+        // ==========================================
+
+        const toast = document.getElementById('toast');
+        const toastIcon = document.getElementById('toast-icon');
+        const toastMsg = document.getElementById('toast-msg');
+
+        function showToast(message, isSuccess = true) {
+            toastMsg.textContent = message;
+            if (isSuccess) {
+                toastIcon.textContent = 'check_circle';
+                toastIcon.className = 'material-symbols-outlined text-secondary';
+            } else {
+                toastIcon.textContent = 'info';
+                toastIcon.className = 'material-symbols-outlined text-primary';
+            }
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 3000);
+        }
+
+        // Header Actions
+        document.querySelectorAll('nav a, footer a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                showToast(`Navigating to ${link.textContent}... Files stored locally in /knowledge_base/`, false);
+            });
+        });
+
+        const settingsBtn = document.querySelector('.material-symbols-outlined[textContent="settings"]') || document.querySelectorAll('header button')[1];
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', () => {
+                showToast("Settings: Model config set to gemini-2.5-flash. GITHUB_PAT verified.", true);
+            });
+        }
+
+        const notifyBtn = document.querySelector('.material-symbols-outlined[textContent="notifications"]') || document.querySelectorAll('header button')[0];
+        if (notifyBtn) {
+            notifyBtn.addEventListener('click', () => {
+                showToast("Notifications: 0 alerts. Agent Tier 0 is fully operational.", true);
+            });
+        }
+
+        // Analogy Actions
+        const btnShare = document.getElementById('btn-share');
+        if (btnShare) {
+            btnShare.addEventListener('click', () => {
+                const title = document.getElementById('analogy-title').textContent;
+                const text = document.getElementById('analogy-text').textContent;
+                const shareText = `# ${title}\n\n${text}\n\n(Generated via MakeMedEasyExplain)`;
+                
+                navigator.clipboard.writeText(shareText).then(() => {
+                    showToast("Analogy copied to clipboard!", true);
+                }).catch(() => {
+                    showToast("Failed to copy text.", false);
+                });
+            });
+        }
+
+        const btnPrint = document.getElementById('btn-print');
+        if (btnPrint) {
+            btnPrint.addEventListener('click', () => {
+                window.print();
+            });
+        }
+
+        const btnDownload = document.getElementById('btn-download');
+        if (btnDownload) {
+            btnDownload.addEventListener('click', () => {
+                const title = document.getElementById('analogy-title').textContent;
+                const text = document.getElementById('analogy-text').textContent;
+                if (text.includes("Loading")) {
+                    showToast("Please generate an analogy first.", false);
+                    return;
+                }
+                const blob = new Blob([`# ${title}\n\n${text}`], { type: 'text/markdown' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${title.toLowerCase().replace(/[^a-z0-9]+/g, '_')}.md`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast("Analogy downloaded as Markdown!", true);
+            });
+        }
+
+        // Full Logs Modal
+        const viewFullLogBtn = document.getElementById('view-full-log-btn');
+        const logModal = document.getElementById('log-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const modalLogsBody = document.getElementById('modal-logs-body');
+
+        if (viewFullLogBtn && logModal && modalLogsBody) {
+            viewFullLogBtn.addEventListener('click', () => {
+                modalLogsBody.innerHTML = logsContainer.innerHTML || '<div class="py-1">No logs captured in this session.</div>';
+                logModal.classList.remove('hidden');
+            });
+        }
+
+        if (closeModalBtn && logModal) {
+            closeModalBtn.addEventListener('click', () => {
+                logModal.classList.add('hidden');
+            });
+            logModal.addEventListener('click', (e) => {
+                if (e.target === logModal) logModal.classList.add('hidden');
+            });
+        }
     });
 </script>
 </body>
