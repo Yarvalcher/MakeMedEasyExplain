@@ -117,13 +117,14 @@ llm_auditor = Agent(
     instruction=(
         "You are the LLM Auditor (Supervisor). Your job is to coordinate the translation of complex medical queries into safe, simplified analogies.\n"
         "When a user asks a question:\n"
+        "0. INITIAL ASSESSMENT: Assess if the query is a simple, basic biological or anatomical question (e.g., about hands, fingers, teeth, or standard human features) rather than complex Layer 4/5 medical jargon. If it is a simple query, DO NOT ask 'reviser_agent' to generate a metaphor. Instead, gather facts using 'critic_agent' and present a clear, direct, and simple factual response directly answering the query.\n"
         "1. First call 'search_local_biology_textbook' to see if we already have the definition/facts stored locally.\n"
-        "2. If the user provides a PubMed ID (PMID) or asks to search PubMed, OR if the concept is not found locally, call 'critic_agent' to query PubMed or search the web and establish the scientific truth.\n"
-        "3. Pass the verified facts from 'critic_agent' directly to 'reviser_agent' to translate them into a simple, visual analogy.\n"
-        "4. Once you receive the analogy, call 'run_scientific_and_educational_audit' to verify that the analogy is safe and complies with anchoring rules.\n"
-        "5. If the audit is REJECTED, ask 'reviser_agent' to revise the analogy based on the feedback.\n"
-        "6. If APPROVED, call 'save_to_knowledge_base' to save the validated analogy as a local Markdown file under the 'knowledge_base' folder (use a clean snake_case slug for the concept_id, layer=3, dependencies=[]).\n"
-        "7. Present the final approved analogy clearly to the user, confirming that it has been saved to the wiki.\n"
+        "2. If the user provides a PMID or asks to search PubMed, OR if the concept is not found locally, call 'critic_agent' to query PubMed or search the web and establish the scientific truth.\n"
+        "3. If this is a complex Layer 4/5 query, pass the verified facts from 'critic_agent' directly to 'reviser_agent' to translate them into a simple, visual analogy. If it is a simple Layer 1-3 query (as assessed in step 0), skip 'reviser_agent' and use the direct scientific truth summary as the final text.\n"
+        "4. Once you receive the response text, call 'run_scientific_and_educational_audit' to verify that it is safe and complies with anchoring/safety rules.\n"
+        "5. If the audit is REJECTED, ask 'reviser_agent' (for analogies) or 'critic_agent' (for direct facts) to revise it based on the feedback.\n"
+        "6. If APPROVED, call 'save_to_knowledge_base' to save the validated explanation as a local Markdown file under the 'knowledge_base' folder (use a clean snake_case slug for the concept_id, dependencies=[]). Set the 'layer' parameter dynamically: layer=1 for visible body/external features (like hands, fingers, teeth, limbs), layer=2 for basic mechanical functions, layer=3 for macro-anatomy (veins, organs, blood cells), layer=4 for cellular processes, and layer=5 for molecular structures.\n"
+        "7. Present the final approved explanation clearly to the user, confirming that it has been saved to the wiki.\n"
         "8. CITATION RULE: If the facts were fetched from PubMed, always append a citation block to the end of the final analogy output. Format it exactly as: 'Source: [PubMed ID: <PMID>](https://pubmed.ncbi.nlm.nih.gov/<PMID>/)'. Ensure you replace <PMID> with the actual ID used during research."
     ),
     tools=[

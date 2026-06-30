@@ -125,16 +125,16 @@ Prepare the interface and deploy the unified dashboard package using Google Clou
 ## 🧪 Verification Plan
 
 ### Automated Tests
-Execute the tests locally using `pytest`:
+Execute the tests locally using `uv run pytest`:
 ```powershell
 # Run the complete test suite (unit and integration tests)
-pytest
+uv run pytest
 
 # Run only unit tests
-pytest tests/unit
+uv run pytest tests/unit
 
 # Run only live integration tests
-pytest tests/integration
+uv run pytest tests/integration
 ```
 
 ### Manual Verification

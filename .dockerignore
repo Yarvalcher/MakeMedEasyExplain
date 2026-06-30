@@ -1,0 +1,26 @@
+# Ignore environment folders
+.venv/
+venv/
+env/
+ENV/
+
+# Ignore python caches and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore local database / IDE settings
+.vscode/
+.idea/
+.git/
+.gitignore
+
+# Ignore tests and test caches
+tests/
+.pytest_cache/
+
+# Ignore agent helper outputs and conversation logs
+artifacts/
+scratch/
+*.log

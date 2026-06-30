@@ -6,6 +6,7 @@
     <title>MakeMedEasyExplain | Core Dashboard</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script id="tailwind-config">
       tailwind.config = {
         darkMode: "class",
@@ -275,11 +276,11 @@
                 <div class="flex-grow flex flex-col gap-md analogy-border pl-lg">
                     <div class="flex items-center gap-2 text-on-secondary-container">
                         <span class="material-symbols-outlined">lightbulb</span>
-                        <span id="analogy-title" class="font-title-md text-title-md text-surface-dim font-bold">Concept Explanation</span>
+                        <span id="analogy-title" class="font-title-md text-title-md text-slate-900 font-bold">Concept Explanation</span>
                     </div>
-                    <p id="analogy-text" class="font-body-lg text-[20px] leading-relaxed text-surface-dim font-medium italic">
+                    <div id="analogy-text" class="font-body-lg text-[18px] leading-relaxed text-slate-800 font-normal space-y-3">
                         Loading metaphor details...
-                    </p>
+                    </div>
                     <div class="flex gap-4 mt-2">
                         <div class="flex flex-col">
                             <span class="font-label-sm text-[10px] uppercase text-outline">Audit Gate Status</span>
@@ -291,13 +292,13 @@
                         <div class="w-[1px] h-full bg-outline/20"></div>
                         <div class="flex flex-col">
                             <span class="font-label-sm text-[10px] uppercase text-outline">Sync Target</span>
-                            <span id="sync-status" class="font-label-sm text-label-sm text-surface-dim font-bold">Local File + GitHub</span>
+                            <span id="sync-status" class="font-label-sm text-label-sm text-slate-900 font-bold">Local File + GitHub</span>
                         </div>
                     </div>
                     <!-- Medical Disclaimer Alert -->
-                    <div class="mt-4 p-3 bg-red-950/30 border border-red-500/20 rounded-lg flex items-start gap-2 text-red-400">
-                        <span class="material-symbols-outlined text-[18px] mt-0.5 select-none">warning</span>
-                        <p class="font-label-sm text-[11px] leading-relaxed">
+                    <div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2 text-red-850 shadow-sm">
+                        <span class="material-symbols-outlined text-[18px] text-red-600 mt-0.5 select-none">warning</span>
+                        <p class="font-label-sm text-[12px] leading-relaxed text-red-800">
                             <strong>Disclaimer:</strong> This content is for educational and learning purposes only. It is not medical advice and is not intended for self-medication. Because AI systems can hallucinate, always verify medical information precisely and consult a qualified healthcare professional or doctor for any medical issues or treatment decisions.
                         </p>
                     </div>
@@ -461,7 +462,7 @@
                 setCardState(cardSync, 'Synced & Complete', false);
                 
                 document.getElementById('analogy-title').textContent = data.title || "Analogy Explanation";
-                document.getElementById('analogy-text').innerHTML = data.analogy;
+                document.getElementById('analogy-text').innerHTML = marked.parse(data.analogy);
                 document.getElementById('audit-status').textContent = "Approved & Verified";
                 document.getElementById('sync-status').textContent = "knowledge_base/" + data.filename;
                 

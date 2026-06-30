@@ -21,6 +21,12 @@ from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
 from MMEE_Agent.agent import root_agent
+from MMEE_Agent.tools.github_tool import sync_wiki_from_github
+
+# Synchronize local knowledge base with the GitHub Wiki at startup (GitOps sync loop)
+local_kb_dir = Path(__file__).resolve().parent.parent / "knowledge_base"
+sync_msg = sync_wiki_from_github(str(local_kb_dir))
+print(f"🔄 GitOps Startup Sync: {sync_msg}")
 
 app = Flask(__name__, template_folder='templates')
 
