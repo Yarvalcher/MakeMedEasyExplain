@@ -451,6 +451,21 @@
                     return;
                 }
 
+                if (data.approved === false) {
+                    setCardState(cardSupervisor, 'Rejected', false);
+                    setCardState(cardSync, 'Skipped', false);
+                    appendLog('SYSTEM', 'Request rejected/refused by safety filters.', true);
+                    
+                    document.getElementById('analogy-title').textContent = data.title || "Request Rejected";
+                    document.getElementById('analogy-text').innerHTML = `<div class="bg-red-50 border border-red-200 text-red-800 p-4 rounded-xl font-medium">${data.analogy}</div>`;
+                    document.getElementById('audit-status').textContent = "Rejected / Safety Refusal";
+                    document.getElementById('sync-status').textContent = "None (Not Saved)";
+                    
+                    analogySection.classList.remove('hidden');
+                    appendLog('SYSTEM', 'Workflow ended with rejection.', true);
+                    return;
+                }
+
                 // Step 4: Sync & Save
                 setCardState(cardSupervisor, 'Approved', false);
                 setCardState(cardSync, 'Syncing wiki...', true);

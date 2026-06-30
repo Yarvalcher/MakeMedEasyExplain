@@ -71,6 +71,22 @@ async def run_agent_pipeline(query: str):
 def index():
     return render_template('index.html')
 
+def is_refusal(text: str) -> bool:
+    """Helper to detect if the agent response is a refusal/rejection."""
+    text_lower = text.lower()
+    refusal_phrases = [
+        "cannot respond to that",
+        "cannot help you with",
+        "unable to respond",
+        "unable to help",
+        "ask a different question",
+        "not appropriate",
+        "against my safety",
+        "safety guidelines",
+        "inappropriate content"
+    ]
+    return any(phrase in text_lower for phrase in refusal_phrases)
+
 @app.route('/translate', methods=['POST'])
 async def translate():
     data = request.get_json() or {}
@@ -80,12 +96,29 @@ async def translate():
         return jsonify({"error": "Query cannot be empty."}), 400
         
     try:
+        # Track files in local KB before running pipeline
+        files_before = set(local_kb_dir.glob("*.md")) if local_kb_dir.exists() else set()
+
         # Await the async pipeline directly on Flask's native event loop
         response_text = await run_agent_pipeline(query)
         
-        # Check if the output contains save info
-        filename = f"{slugify(query[:30])}.md"
+        # Track files in local KB after running pipeline
+        files_after = set(local_kb_dir.glob("*.md")) if local_kb_dir.exists() else set()
+        new_files = files_after - files_before
+
+        # Determine if it's approved and what the filename/sync status should be
+        approved = not is_refusal(response_text)
         
+        if not approved:
+            filename = None
+            sync_status = "Not saved (Refusal / Safety Block)"
+        elif new_files:
+            filename = list(new_files)[0].name
+            sync_status = "Saved to local cache & pushed to GitHub wiki."
+        else:
+            filename = None
+            sync_status = "Loaded from local cache."
+
         # Extract clean title from query
         title = query.replace("what is ", "").replace("difference between ", "").title()
         
@@ -93,7 +126,8 @@ async def translate():
             "analogy": response_text,
             "title": title,
             "filename": filename,
-            "sync_status": "Saved to local cache & pushed to GitHub wiki."
+            "sync_status": sync_status,
+            "approved": approved
         })
         
     except Exception as e:
