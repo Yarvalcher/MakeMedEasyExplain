@@ -100,12 +100,18 @@ MMEE_Agent/
    adk --help
    ```
 
-5. **Run the Agent (Web UI)**:
-   Launch the interactive local web interface:
+5. **Run the Custom Flask Dashboard (Recommended)**:
+   Launch the premium, visual multi-agent trace dashboard:
+   ```bash
+   uv run python MMEE_Agent/app.py
+   ```
+   Open your browser and navigate to `http://127.0.0.1:8000`.
+
+6. **Run the Default ADK Web UI**:
+   If you wish to access the raw ADK model playground:
    ```bash
    .venv\Scripts\adk web --port 8000 MMEE_Agent
    ```
-   Once started, open your browser and navigate to `http://127.0.0.1:8000` to interact with the agent.
 
 ---
 

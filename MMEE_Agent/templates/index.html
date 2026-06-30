@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>MakeMedEasyExplain | Core Dashboard</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary": "#adc6ff",
+                    "on-secondary-container": "#00463b",
+                    "surface-bright": "#363940",
+                    "inverse-on-surface": "#2e3038",
+                    "on-primary-fixed-variant": "#004494",
+                    "primary-container": "#4d8efe",
+                    "on-surface": "#e1e2eb",
+                    "surface-container-lowest": "#0b0e15",
+                    "tertiary-fixed-dim": "#f9abff",
+                    "tertiary-container": "#d560e6",
+                    "outline": "#8c909f",
+                    "on-tertiary": "#570066",
+                    "on-secondary-fixed": "#00201a",
+                    "surface-dim": "#11131a",
+                    "surface-variant": "#32353c",
+                    "secondary-fixed": "#68fadd",
+                    "error-container": "#93000a",
+                    "secondary-fixed-dim": "#44ddc1",
+                    "on-secondary": "#00382f",
+                    "on-primary-fixed": "#001a41",
+                    "on-surface-variant": "#c2c6d5",
+                    "surface-container-low": "#191b22",
+                    "background": "#11131a",
+                    "on-secondary-fixed-variant": "#005145",
+                    "on-tertiary-fixed": "#35003f",
+                    "on-tertiary-fixed-variant": "#7b008f",
+                    "on-primary": "#002e69",
+                    "inverse-primary": "#005ac1",
+                    "tertiary": "#f9abff",
+                    "surface": "#11131a",
+                    "inverse-surface": "#e1e2eb",
+                    "on-tertiary-container": "#4c0059",
+                    "primary-fixed-dim": "#adc6ff",
+                    "on-primary-container": "#00285c",
+                    "surface-container-highest": "#32353c",
+                    "surface-container-high": "#272a31",
+                    "on-error": "#690005",
+                    "primary-fixed": "#d8e2ff",
+                    "surface-tint": "#adc6ff",
+                    "error": "#ffb4ab",
+                    "on-background": "#e1e2eb",
+                    "secondary": "#44ddc1",
+                    "surface-container": "#1d2026",
+                    "secondary-container": "#00bea4",
+                    "on-error-container": "#ffdad6",
+                    "tertiary-fixed": "#ffd6fe",
+                    "outline-variant": "#424753"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sm": "8px",
+                    "gutter": "24px",
+                    "lg": "24px",
+                    "md": "16px",
+                    "margin-mobile": "16px",
+                    "max-width": "1200px",
+                    "margin-desktop": "80px",
+                    "xs": "4px",
+                    "xl": "48px",
+                    "unit": "4px"
+            },
+            "fontFamily": {
+                    "body-md": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "headline-lg-mobile": ["Outfit"],
+                    "title-md": ["Outfit"],
+                    "display-lg": ["Outfit"],
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["Outfit"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+    <style>
+        body {
+            background-color: #0A0A0B;
+            color: #e1e2eb;
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background: rgba(18, 18, 20, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .active-pulse {
+            animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.3; }
+            100% { transform: scale(0.8); opacity: 0.5; }
+        }
+
+        .status-glow-primary {
+            box-shadow: 0 0 12px rgba(173, 198, 255, 0.3);
+        }
+
+        .status-glow-secondary {
+            box-shadow: 0 0 12px rgba(68, 221, 193, 0.3);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .analogy-border {
+            border-left: 4px solid #44ddc1;
+        }
+    </style>
+</head>
+<body class="font-body-md selection:bg-primary/30 flex flex-col min-h-screen">
+
+<!-- Navigation -->
+<header class="bg-surface/70 backdrop-blur-xl border-b border-white/10 shadow-[0_0_20px_rgba(173,198,255,0.1)] sticky top-0 z-50">
+    <div class="flex justify-between items-center w-full px-margin-desktop py-md max-w-max-width mx-auto">
+        <div class="flex items-center gap-6">
+            <span class="font-display-lg text-headline-lg-mobile tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">MakeMedEasyExplain</span>
+            <div class="hidden md:flex items-center gap-2 bg-secondary/10 px-3 py-1 rounded-full border border-secondary/20">
+                <span class="w-2 h-2 rounded-full bg-secondary active-pulse"></span>
+                <span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest">Agent Tier 0 Active</span>
+            </div>
+        </div>
+        <nav class="hidden md:flex items-center gap-8">
+            <a class="font-body-md text-body-md text-primary border-b-2 border-primary pb-1" href="#">Research</a>
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">History</a>
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Library</a>
+        </nav>
+        <div class="flex items-center gap-4">
+            <button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
+            <button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">settings</button>
+            <div class="w-8 h-8 rounded-full overflow-hidden border border-white/10">
+                <div class="w-full h-full bg-surface-variant flex items-center justify-center font-bold text-primary">Dr</div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main class="relative z-10 max-w-max-width mx-auto px-margin-desktop pt-xl pb-xl flex flex-col gap-xl flex-grow w-full">
+    <!-- Hero Search Section -->
+    <section class="w-full flex flex-col items-center gap-md">
+        <div class="w-full max-w-3xl glass-panel p-2 rounded-xl flex items-center gap-2 group transition-all duration-300 focus-within:shadow-[0_0_20px_rgba(173,198,255,0.15)] focus-within:border-primary/50">
+            <span class="material-symbols-outlined text-outline ml-4">search</span>
+            <input id="query-input" class="flex-grow bg-transparent border-none focus:ring-0 text-body-lg font-body-lg text-on-surface placeholder:text-outline/50 py-4" placeholder="Enter research query or PubMed ID (PMID)..." type="text"/>
+            <button id="translate-btn" class="bg-gradient-to-r from-primary to-secondary text-on-primary font-title-md text-body-md px-8 py-3 rounded-lg flex items-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg status-glow-primary">
+                Translate
+                <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+            </button>
+        </div>
+        <p class="text-label-sm font-label-sm text-outline/60 uppercase tracking-widest">Bridging medical literature and patient understanding with AI</p>
+    </section>
+
+    <!-- Pipeline and Audit Log Section -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-lg h-full">
+        <!-- Live Pipeline Visualizer -->
+        <div class="lg:col-span-9 flex flex-col gap-md">
+            <div class="flex justify-between items-end">
+                <h2 class="font-headline-lg text-headline-lg text-on-surface">Live Pipeline Visualizer</h2>
+                <span class="text-label-sm font-label-sm text-secondary uppercase tracking-widest mb-1">Interactive Tracing</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-md">
+                <!-- Agent Card: Critic -->
+                <div id="card-critic" class="glass-panel p-md rounded-xl flex flex-col gap-sm border-secondary/20 relative overflow-hidden group opacity-60">
+                    <div class="absolute top-0 right-0 p-2 pulse-container hidden">
+                        <div class="w-2 h-2 rounded-full bg-secondary active-pulse"></div>
+                    </div>
+                    <span class="material-symbols-outlined text-secondary text-[24px]">biotech</span>
+                    <div class="flex flex-col">
+                        <span class="font-title-md text-title-md text-on-surface">Critic</span>
+                        <span class="font-label-sm text-label-sm text-outline status-text">Inactive</span>
+                    </div>
+                </div>
+                <!-- Agent Card: Reviser -->
+                <div id="card-reviser" class="glass-panel p-md rounded-xl flex flex-col gap-sm relative overflow-hidden group opacity-60">
+                    <div class="absolute top-0 right-0 p-2 pulse-container hidden">
+                        <div class="w-2 h-2 rounded-full bg-primary active-pulse"></div>
+                    </div>
+                    <span class="material-symbols-outlined text-primary text-[24px]">edit_note</span>
+                    <div class="flex flex-col">
+                        <span class="font-title-md text-title-md text-on-surface">Reviser</span>
+                        <span class="font-label-sm text-label-sm text-outline status-text">Inactive</span>
+                    </div>
+                </div>
+                <!-- Agent Card: Supervisor -->
+                <div id="card-supervisor" class="glass-panel p-md rounded-xl flex flex-col gap-sm relative overflow-hidden group opacity-60">
+                    <div class="absolute top-0 right-0 p-2 pulse-container hidden">
+                        <div class="w-2 h-2 rounded-full bg-tertiary active-pulse"></div>
+                    </div>
+                    <span class="material-symbols-outlined text-tertiary text-[24px]">verified_user</span>
+                    <div class="flex flex-col">
+                        <span class="font-title-md text-title-md text-on-surface">Supervisor</span>
+                        <span class="font-label-sm text-label-sm text-outline status-text">Inactive</span>
+                    </div>
+                </div>
+                <!-- Agent Card: GitHub Sync -->
+                <div id="card-sync" class="glass-panel p-md rounded-xl flex flex-col gap-sm relative overflow-hidden group opacity-60">
+                    <div class="absolute top-0 right-0 p-2 pulse-container hidden">
+                        <div class="w-2 h-2 rounded-full bg-outline active-pulse"></div>
+                    </div>
+                    <span class="material-symbols-outlined text-outline text-[24px]">cloud_sync</span>
+                    <div class="flex flex-col">
+                        <span class="font-title-md text-title-md text-on-surface">Wiki & Git Sync</span>
+                        <span class="font-label-sm text-label-sm text-outline status-text">Inactive</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audit Log Widget -->
+        <aside class="lg:col-span-3 flex flex-col gap-md">
+            <h3 class="font-title-md text-title-md text-on-surface">Live Trace Logs</h3>
+            <div id="logs-container" class="glass-panel rounded-xl p-md flex flex-col gap-sm h-[200px] overflow-y-auto custom-scrollbar">
+                <div class="flex items-start gap-2 py-1">
+                    <span class="text-[10px] bg-outline/20 text-outline px-1 rounded font-bold mt-1">SYSTEM</span>
+                    <span class="font-label-sm text-[11px] text-on-surface-variant">Dashboard ready. Enter query to begin.</span>
+                </div>
+            </div>
+        </aside>
+    </section>
+
+    <!-- Validated Analogy Section -->
+    <section id="analogy-section" class="flex flex-col gap-md hidden">
+        <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">stars</span>
+            <h2 class="font-headline-lg text-headline-lg text-on-surface">Validated Analogy</h2>
+        </div>
+        <div class="bg-on-surface rounded-2xl p-xl shadow-2xl relative overflow-hidden group">
+            <div class="absolute -right-20 -top-20 w-64 h-64 bg-secondary/10 rounded-full blur-3xl group-hover:bg-secondary/20 transition-colors duration-1000"></div>
+            <div class="relative z-10 flex flex-col md:flex-row gap-xl items-center">
+                <!-- Analogy Icon/Metaphor Area -->
+                <div class="w-full md:w-1/4 aspect-square rounded-xl bg-surface-container flex flex-col items-center justify-center border-2 border-white/10 shadow-xl gap-2">
+                    <span class="material-symbols-outlined text-secondary text-[64px]" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+                    <span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Metaphor</span>
+                </div>
+                <div class="flex-grow flex flex-col gap-md analogy-border pl-lg">
+                    <div class="flex items-center gap-2 text-on-secondary-container">
+                        <span class="material-symbols-outlined">lightbulb</span>
+                        <span id="analogy-title" class="font-title-md text-title-md text-surface-dim font-bold">Concept Explanation</span>
+                    </div>
+                    <p id="analogy-text" class="font-body-lg text-[20px] leading-relaxed text-surface-dim font-medium italic">
+                        Loading metaphor details...
+                    </p>
+                    <div class="flex gap-4 mt-2">
+                        <div class="flex flex-col">
+                            <span class="font-label-sm text-[10px] uppercase text-outline">Audit Gate Status</span>
+                            <div class="flex gap-1 text-secondary">
+                                <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+                                <span id="audit-status" class="font-label-sm text-label-sm">Safe & Approved</span>
+                            </div>
+                        </div>
+                        <div class="w-[1px] h-full bg-outline/20"></div>
+                        <div class="flex flex-col">
+                            <span class="font-label-sm text-[10px] uppercase text-outline">Sync Target</span>
+                            <span id="sync-status" class="font-label-sm text-label-sm text-surface-dim font-bold">Local File + GitHub</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- Footer -->
+<footer class="bg-surface-dim border-t border-white/5 py-xl mt-auto">
+    <div class="flex flex-col md:flex-row justify-between items-center px-margin-desktop w-full max-w-max-width mx-auto">
+        <div class="flex flex-col gap-1 items-center md:items-start">
+            <span class="font-body-md text-on-surface font-bold">MakeMedEasyExplain</span>
+            <span class="font-label-sm text-label-sm text-outline">Powered by Google Cloud Vertex AI & ADK</span>
+        </div>
+        <div class="flex gap-8 my-6 md:my-0">
+            <a class="font-label-sm text-label-sm text-outline hover:text-on-surface transition-colors underline decoration-secondary/50" href="#">Technical Specs</a>
+            <a class="font-label-sm text-label-sm text-outline hover:text-on-surface transition-colors underline decoration-secondary/50" href="#">Privacy Policy</a>
+            <a class="font-label-sm text-label-sm text-outline hover:text-on-surface transition-colors underline decoration-secondary/50" href="#">Clinical Guidelines</a>
+        </div>
+    </div>
+</footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const queryInput = document.getElementById('query-input');
+        const translateBtn = document.getElementById('translate-btn');
+        const logsContainer = document.getElementById('logs-container');
+        const analogySection = document.getElementById('analogy-section');
+
+        // Agent elements
+        const cardCritic = document.getElementById('card-critic');
+        const cardReviser = document.getElementById('card-reviser');
+        const cardSupervisor = document.getElementById('card-supervisor');
+        const cardSync = document.getElementById('card-sync');
+
+        function appendLog(category, message, isHighlighted = false) {
+            const logDiv = document.createElement('div');
+            logDiv.className = "flex items-start gap-2 py-1 border-b border-white/5";
+            
+            const badgeClass = category === 'SAFETY' ? 'bg-secondary/20 text-secondary' :
+                               category === 'SYNC' ? 'bg-primary/20 text-primary' : 'bg-outline/20 text-outline';
+            
+            logDiv.innerHTML = `
+                <span class="text-[10px] ${badgeClass} px-1 rounded font-bold mt-1">${category}</span>
+                <span class="font-label-sm text-[11px] ${isHighlighted ? 'text-secondary font-semibold' : 'text-on-surface-variant'}">${message}</span>
+            `;
+            logsContainer.appendChild(logDiv);
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+
+        function setCardState(card, statusText, isActive = false) {
+            const textEl = card.querySelector('.status-text');
+            const pulseContainer = card.querySelector('.pulse-container');
+            
+            textEl.textContent = statusText;
+            
+            if (isActive) {
+                card.classList.remove('opacity-60');
+                card.classList.add('border-secondary');
+                pulseContainer.classList.remove('hidden');
+            } else {
+                card.classList.add('opacity-60');
+                card.classList.remove('border-secondary');
+                pulseContainer.classList.add('hidden');
+            }
+        }
+
+        async function triggerTranslation() {
+            const query = queryInput.value.trim();
+            if (!query) return;
+
+            // Reset visual states
+            analogySection.classList.add('hidden');
+            logsContainer.innerHTML = '';
+            appendLog('SYSTEM', 'Initiating translation flow...');
+
+            // Step 1: Critic runs
+            setCardState(cardCritic, 'Searching facts...', true);
+            setCardState(cardReviser, 'Inactive', false);
+            setCardState(cardSupervisor, 'Inactive', false);
+            setCardState(cardSync, 'Inactive', false);
+            appendLog('CRITIC', 'Querying databases & fetching science truth...');
+
+            try {
+                const response = await fetch(window.location.origin + '/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query })
+                });
+                
+                const data = await response.json();
+                
+                // Step 2: Handoff to Reviser
+                setCardState(cardCritic, 'Facts gathered.', false);
+                setCardState(cardReviser, 'Constructing analogy...', true);
+                appendLog('REVISER', 'Translating technical terms into metaphor analogies...');
+                await new Promise(r => setTimeout(r, 1200));
+
+                // Step 3: Handoff to Supervisor
+                setCardState(cardReviser, 'Analogy generated.', false);
+                setCardState(cardSupervisor, 'Safety auditing...', true);
+                appendLog('SAFETY', 'Running factual drift and medical advice checks...');
+                await new Promise(r => setTimeout(r, 1000));
+
+                if (data.error) {
+                    appendLog('ERROR', data.error);
+                    setCardState(cardSupervisor, 'Audit Failed', false);
+                    return;
+                }
+
+                // Step 4: Sync & Save
+                setCardState(cardSupervisor, 'Approved', false);
+                setCardState(cardSync, 'Syncing wiki...', true);
+                appendLog('SYNC', 'Writing analogy file to local wiki...');
+                appendLog('SYNC', data.sync_status || 'Local & GitHub sync complete.');
+                await new Promise(r => setTimeout(r, 800));
+
+                // Final display
+                setCardState(cardSync, 'Synced & Complete', false);
+                
+                document.getElementById('analogy-title').textContent = data.title || "Analogy Explanation";
+                document.getElementById('analogy-text').innerHTML = data.analogy;
+                document.getElementById('audit-status').textContent = "Approved & Verified";
+                document.getElementById('sync-status').textContent = "knowledge_base/" + data.filename;
+                
+                analogySection.classList.remove('hidden');
+                appendLog('SYSTEM', 'Workflow completed successfully.', true);
+                
+            } catch (err) {
+                console.error("Dashboard Fetch Error:", err);
+                appendLog('ERROR', 'Connection failed: ' + err.name + " - " + err.message + " (Check F12 developer console)");
+                setCardState(cardCritic, 'Error', false);
+                setCardState(cardReviser, 'Error', false);
+                setCardState(cardSupervisor, 'Error', false);
+            }
+        }
+
+        translateBtn.addEventListener('click', triggerTranslation);
+        queryInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') triggerTranslation();
+        });
+    });
+</script>
+</body>
+</html>

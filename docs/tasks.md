@@ -108,15 +108,17 @@ Unify the agents using Google's Agent Development Kit (ADK) with a clean Supervi
 
 ---
 
-### Phase 6: User Interface & Deployment Preparation
-Prepare the interface and deploy using Google Vertex AI Reasoning Engine (Tier 0).
+### Phase 6: User Interface & Cloud Run Deployment
+Prepare the interface and deploy the unified dashboard package using Google Cloud Run.
 
-*   [ ] **Block 6.1: Flask Web Interface**
+*   [x] **Block 6.1: Flask Web Interface**
     *   **Description**: Lightweight user interface displaying inputs, analogy outputs, and validation details.
     *   **Testable Assertions (TDD)**:
         *   `test_flask_endpoint_returns_200()`: Basic health check.
-*   [ ] **Block 6.2: Vertex AI Agent Engine App Configuration**
-    *   **Description**: Build configuration files to register tools and agents under Vertex AI `InMemoryArtifactService`.
+*   [ ] **Block 6.2: Cloud Run Docker Containerization & Config**
+    *   **Description**: Build a container manifest (`Dockerfile` + `.dockerignore`) packaging the Flask app, local cached wiki, and ADK pipeline, ready for one-click serverless deployment to Google Cloud Run.
+    *   **Testable Assertions (TDD)**:
+        *   Verify container build and verify entrypoint execution parameters.
 
 ---
 
