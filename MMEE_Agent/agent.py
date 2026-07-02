@@ -1,10 +1,19 @@
 import os
 import re
-from google.adk.agents.llm_agent import Agent
-from google.adk.tools.agent_tool import AgentTool
-from google.genai import types
+import json
+from typing import AsyncGenerator, Optional, Dict, Any
 from pathlib import Path
+
+from google.adk.agents import BaseAgent, SequentialAgent, LoopAgent
+from google.adk.agents.invocation_context import InvocationContext
+from google.adk.events import Event, EventActions
+from google.adk.agents.callback_context import CallbackContext
+from google.adk.models.llm_request import LlmRequest
+from google.adk.models.llm_response import LlmResponse
+from google.adk.tools.agent_tool import AgentTool
+
 from MMEE_Agent.tools.openkb_loader import OKFIndexer
+from MMEE_Agent.sub_agents.classifier.agent import classifier_agent, QueryMetadata
 from MMEE_Agent.sub_agents.critic.agent import critic_agent
 from MMEE_Agent.sub_agents.reviser.agent import reviser_agent
 from MMEE_Agent.tools.validator import validate_analogy
@@ -15,14 +24,7 @@ local_kb_path = Path(__file__).parent.parent / "knowledge_base"
 indexer = OKFIndexer(local_kb_path)
 
 def save_to_knowledge_base(concept_id: str, layer: int, dependencies: list, content: str) -> str:
-    """Saves a validated concept analogy to the local knowledge base as a Markdown file.
-    
-    Args:
-        concept_id: Unique name for the concept (e.g. 't_cell', 'diabetes_type_1_vs_type_2').
-        layer: Cognitive layer level (1-5).
-        dependencies: List of related parent concepts.
-        content: The validated metaphor/analogy body.
-    """
+    """Saves a validated concept analogy to the local knowledge base as a Markdown file."""
     clean_id = re.sub(r'[^a-zA-Z0-9_]', '', concept_id.lower().strip().replace(" ", "_").replace("-", "_"))
     if not clean_id:
         return "Error: Invalid concept_id."
@@ -55,11 +57,7 @@ def save_to_knowledge_base(concept_id: str, layer: int, dependencies: list, cont
         return f"Failed to save file: {e}"
 
 def search_local_biology_textbook(query: str) -> str:
-    """Searches the local OpenKB biology textbook index for foundational definitions.
-    
-    Args:
-        query: The term or concept to look up (e.g., 'mhc_ii', 't_cell').
-    """
+    """Searches the local OpenKB biology textbook index for foundational definitions."""
     try:
         docs = indexer.search(query)
         if not docs:
@@ -79,15 +77,7 @@ def search_local_biology_textbook(query: str) -> str:
         return f"Error searching local knowledge base: {e}"
 
 def run_scientific_and_educational_audit(analogy: str, abstract: str) -> str:
-    """Audits the generated analogy for scientific correctness and concept anchoring compliance.
-    
-    Args:
-        analogy: The generated visual analogy/explanation.
-        abstract: The raw medical facts or abstract.
-        
-    Returns:
-        A status string indicating whether the analogy is APPROVED or REJECTED with specific feedback.
-    """
+    """Audits the generated analogy for scientific correctness and concept anchoring compliance."""
     # 1. Run scientific validation (medical advice & percentages)
     val_res = validate_analogy(analogy, abstract)
     if val_res["status"] == "REJECTED":
@@ -102,39 +92,220 @@ def run_scientific_and_educational_audit(analogy: str, abstract: str) -> str:
 
 
 # ==========================================
-# 👑 Define Supervisor Agent (LLM Auditor)
+# 🛡️ Callback-Based Guardrails
 # ==========================================
 
-llm_auditor = Agent(
-    model='gemini-2.5-flash',
-    name='llm_auditor',
-    description='MakeMedEasyExplain Supervisor Agent - democratizes medical literature.',
-    generate_content_config=types.GenerateContentConfig(
-        http_options=types.HttpOptions(
-            retry_options=types.HttpRetryOptions(initial_delay=1.0, attempts=3)
-        )
-    ),
-    instruction=(
-        "You are the LLM Auditor (Supervisor). Your job is to coordinate the translation of complex medical queries into safe, simplified analogies.\n"
-        "When a user asks a question:\n"
-        "0. INITIAL ASSESSMENT: Assess if the query is a simple, basic biological or anatomical question (e.g., about hands, fingers, teeth, or standard human features) rather than complex Layer 4/5 medical jargon. If it is a simple query, DO NOT ask 'reviser_agent' to generate a metaphor. Instead, gather facts using 'critic_agent' and present a clear, direct, and simple factual response directly answering the query.\n"
-        "1. First call 'search_local_biology_textbook' to see if we already have the definition/facts stored locally.\n"
-        "2. If the user provides a PMID or asks to search PubMed, OR if the concept is not found locally, call 'critic_agent' to query PubMed or search the web and establish the scientific truth.\n"
-        "3. If this is a complex Layer 4/5 query, pass the verified facts from 'critic_agent' directly to 'reviser_agent' to translate them into a simple, visual analogy. If it is a simple Layer 1-3 query (as assessed in step 0), skip 'reviser_agent' and use the direct scientific truth summary as the final text.\n"
-        "4. Once you receive the response text, call 'run_scientific_and_educational_audit' to verify that it is safe and complies with anchoring/safety rules.\n"
-        "5. If the audit is REJECTED, ask 'reviser_agent' (for analogies) or 'critic_agent' (for direct facts) to revise it based on the feedback.\n"
-        "6. If APPROVED, call 'save_to_knowledge_base' to save the validated explanation as a local Markdown file under the 'knowledge_base' folder (use a clean snake_case slug for the concept_id, dependencies=[]). Set the 'layer' parameter dynamically: layer=1 for visible body/external features (like hands, fingers, teeth, limbs), layer=2 for basic mechanical functions, layer=3 for macro-anatomy (veins, organs, blood cells), layer=4 for cellular processes, and layer=5 for molecular structures.\n"
-        "7. Present the final approved explanation clearly to the user, confirming that it has been saved to the wiki.\n"
-        "8. CITATION RULE: If the facts were fetched from PubMed, always append a citation block to the end of the final analogy output. Format it exactly as: 'Source: [PubMed ID: <PMID>](https://pubmed.ncbi.nlm.nih.gov/<PMID>/)'. Ensure you replace <PMID> with the actual ID used during research."
-    ),
-    tools=[
-        AgentTool(agent=critic_agent),
-        AgentTool(agent=reviser_agent),
-        search_local_biology_textbook,
-        run_scientific_and_educational_audit,
-        save_to_knowledge_base
+from google.genai import types
+
+def before_model_guardrail(
+    callback_context: CallbackContext, 
+    llm_request: LlmRequest
+) -> Optional[LlmResponse]:
+    """Pre-LLM guardrail to block requests that fail safety checks."""
+    state = callback_context.session.state
+    metadata = state.get("query_metadata")
+    if metadata:
+        if isinstance(metadata, str):
+            try:
+                metadata = json.loads(metadata)
+            except Exception:
+                pass
+        
+        is_safe = True
+        reason = "Request blocked due to safety guidelines."
+        if isinstance(metadata, dict):
+            is_safe = metadata.get("is_safe", True)
+            reason = metadata.get("safety_reason", reason)
+        elif hasattr(metadata, "is_safe"):
+            is_safe = metadata.is_safe
+            reason = getattr(metadata, "safety_reason", reason)
+            
+        if not is_safe:
+            return LlmResponse(content=types.Content(parts=[types.Part.from_text(text=f"Request blocked: {reason}")]))
+            
+    return None
+
+def before_tool_guardrail(tool: Any, args: Dict[str, Any], tool_context: Any) -> Optional[Dict]:
+    """Pre-tool guardrail to check tool arguments (e.g. path traversal check)."""
+    if tool.name == "save_to_knowledge_base":
+        concept_id = args.get("concept_id", "")
+        # Prevent traversal or malicious inputs
+        clean_id = re.sub(r'[^a-zA-Z0-9_]', '', concept_id.lower().strip().replace(" ", "_").replace("-", "_"))
+        if not clean_id or ".." in concept_id or "/" in concept_id or "\\" in concept_id:
+            return {"error": "Security Violation: Path traversal or invalid characters detected."}
+    return None
+
+
+# ==========================================
+# 🤖 Custom Pipeline Agents
+# ==========================================
+
+class FactRetrieverAgent(BaseAgent):
+    """Retrieves facts locally or runs critic_agent to fetch clinical research."""
+    
+    async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event, None]:
+        metadata = ctx.session.state.get("query_metadata")
+        if isinstance(metadata, str):
+            try:
+                metadata = json.loads(metadata)
+            except Exception:
+                pass
+                
+        if not metadata:
+            yield Event(author=self.name, content=types.Content(parts=[types.Part.from_text(text="Error: No query metadata found.")]))
+            ctx.end_invocation = True
+            return
+            
+        is_safe = True
+        reason = "Inappropriate content."
+        if isinstance(metadata, dict):
+            is_safe = metadata.get("is_safe", True)
+            reason = metadata.get("safety_reason", reason)
+        elif hasattr(metadata, "is_safe"):
+            is_safe = metadata.is_safe
+            reason = getattr(metadata, "safety_reason", reason)
+            
+        if not is_safe:
+            yield Event(author=self.name, content=types.Content(parts=[types.Part.from_text(text=f"Request blocked: {reason}")]))
+            ctx.end_invocation = True
+            return
+            
+        # Extract metadata fields
+        is_complex = metadata.get("is_complex", True) if isinstance(metadata, dict) else getattr(metadata, "is_complex", True)
+        concept_id = metadata.get("core_concept", "concept") if isinstance(metadata, dict) else getattr(metadata, "core_concept", "concept")
+        
+        # Get query
+        query = ""
+        if ctx.session.history:
+            for msg in reversed(ctx.session.history):
+                if msg.role == "user":
+                    query = msg.parts[0].text
+                    break
+        if not query:
+            query = concept_id
+
+        # 1. Check local knowledge base first
+        local_result = search_local_biology_textbook(concept_id)
+        if "No results found" not in local_result:
+            ctx.session.state["raw_facts"] = local_result
+            ctx.session.state["is_cached"] = True
+            yield Event(author=self.name, content=types.Content(parts=[types.Part.from_text(text=local_result)]))
+            ctx.end_invocation = True
+            return
+            
+        # Initialize loop variables
+        ctx.session.state["is_cached"] = False
+        ctx.session.state["audit_feedback"] = ""
+        
+        # 2. Fetch facts using critic_agent
+        yield Event(author=self.name, content=types.Content(parts=[types.Part.from_text(text=f"Retrieving online medical research for '{concept_id}'...")]))
+        
+        # Call critic_agent programmatically
+        raw_facts = ""
+        async for event in critic_agent.run_async(ctx):
+            if event.content:
+                raw_facts += event.content
+                yield event
+                
+        ctx.session.state["raw_facts"] = raw_facts
+        
+        # 3. If simple (Layer 1-3) and not cached, proceed without ending early so the reviser can simplify it
+        if not is_complex:
+            pass
+
+
+class ValidatorAgent(BaseAgent):
+    """Validator step inside the LoopAgent. Escales if approved, otherwise saves feedback."""
+    
+    async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event, None]:
+        metadata = ctx.session.state.get("query_metadata")
+        if isinstance(metadata, str):
+            try:
+                metadata = json.loads(metadata)
+            except Exception:
+                pass
+                
+        is_complex = True
+        if isinstance(metadata, dict):
+            is_complex = metadata.get("is_complex", True)
+        elif hasattr(metadata, "is_complex"):
+            is_complex = metadata.is_complex
+
+        if not is_complex:
+            # Simple concept: auto-approve immediately
+            yield Event(author=self.name, content=types.Content(parts=[types.Part.from_text(text="APPROVED: Simple concept bypassed validation.")]))
+            yield Event(author=self.name, actions=EventActions(escalate=True))
+            return
+
+        analogy = ctx.session.state.get("analogy", "")
+        raw_facts = ctx.session.state.get("raw_facts", "")
+        
+        audit_res = run_scientific_and_educational_audit(analogy, raw_facts)
+        yield Event(author=self.name, content=types.Content(parts=[types.Part.from_text(text=audit_res)]))
+        
+        if "APPROVED" in audit_res:
+            yield Event(author=self.name, actions=EventActions(escalate=True))
+        else:
+            ctx.session.state["audit_feedback"] = audit_res
+
+
+class SaveAgent(BaseAgent):
+    """Saves approved analogies to knowledge base and formats final response."""
+    
+    async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event, None]:
+        metadata = ctx.session.state.get("query_metadata")
+        analogy = ctx.session.state.get("analogy", "")
+        raw_facts = ctx.session.state.get("raw_facts", "")
+        
+        if isinstance(metadata, str):
+            try:
+                metadata = json.loads(metadata)
+            except Exception:
+                pass
+                
+        concept_id = metadata.get("core_concept", "concept") if isinstance(metadata, dict) else getattr(metadata, "core_concept", "concept")
+        layer = metadata.get("estimated_layer", 4) if isinstance(metadata, dict) else getattr(metadata, "estimated_layer", 4)
+        
+        # Parse PMID from raw_facts to append citation
+        pmid_match = re.search(r'PMID:\s*(\d+)', raw_facts, re.IGNORECASE)
+        citation = ""
+        if pmid_match:
+            pmid = pmid_match.group(1)
+            citation = f"\n\nSource: [PubMed ID: {pmid}](https://pubmed.ncbi.nlm.nih.gov/{pmid}/)"
+            
+        final_analogy = analogy + citation
+        ctx.session.state["analogy"] = final_analogy
+        
+        save_msg = save_to_knowledge_base(concept_id, layer, [], final_analogy)
+        yield Event(author=self.name, content=types.Content(parts=[types.Part.from_text(text=f"{final_analogy}\n\n* {save_msg}")]))
+
+
+# Register callbacks on sub-agents to intercept safety violations & block calls
+classifier_agent.before_model_callback = before_model_guardrail
+reviser_agent.before_model_callback = before_model_guardrail
+critic_agent.before_model_callback = before_model_guardrail
+
+# Register callbacks for tools
+critic_agent.before_tool_callback = before_tool_guardrail
+
+
+# ==========================================
+# 👑 Define Parent SequentialAgent Pipeline
+# ==========================================
+
+root_agent = SequentialAgent(
+    name="MakeMedEasyExplainPipeline",
+    sub_agents=[
+        classifier_agent,
+        FactRetrieverAgent(name="fact_retriever"),
+        LoopAgent(
+            name="reviser_loop",
+            max_iterations=3,
+            sub_agents=[
+                reviser_agent,
+                ValidatorAgent(name="validator")
+            ]
+        ),
+        SaveAgent(name="saver")
     ]
 )
-
-# Bind the llm_auditor as the entry point root_agent
-root_agent = llm_auditor

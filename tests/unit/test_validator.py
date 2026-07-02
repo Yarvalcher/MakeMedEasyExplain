@@ -32,3 +32,31 @@ def test_validator_approves_safe_analogy():
     assert result["factual_drift_detected"] is False
     assert result["prescriptive_advice_detected"] is False
     assert result["status"] == "APPROVED"
+
+@pytest.mark.anyio
+async def test_validator_agent_bypasses_simple_concepts():
+    from unittest.mock import MagicMock
+    from MMEE_Agent.agent import ValidatorAgent
+    from google.adk.events import EventActions
+
+    # Create ValidatorAgent instance
+    agent = ValidatorAgent(name="test_validator")
+    
+    # Mock context
+    mock_ctx = MagicMock()
+    mock_ctx.session.state = {
+        "query_metadata": {"is_complex": False},
+        "analogy": "Friendly description of teeth",
+        "raw_facts": "Teeth are used to chew food."
+    }
+    
+    # Run the agent async generator implementation
+    events = []
+    async for event in agent._run_async_impl(mock_ctx):
+        events.append(event)
+        
+    assert len(events) == 2
+    assert "APPROVED" in events[0].content.parts[0].text
+    assert events[1].actions is not None
+    assert events[1].actions.escalate is True
+

@@ -1,5 +1,4 @@
 from google.adk.agents.llm_agent import Agent
-
 from google.genai import types
 
 reviser_agent = Agent(
@@ -14,11 +13,20 @@ reviser_agent = Agent(
     instruction=(
         "You are the Reviser Agent (Simplification Educator).\n"
         "Your task is to take medically precise facts and translate them into a simple, visual metaphor or analogy appropriate for the general public.\n"
+        "\n"
+        "Here are the verified medical facts you need to translate:\n"
+        "{raw_facts}\n"
+        "\n"
+        "If there is previous feedback from a rejected audit, use it to improve your translation:\n"
+        "{audit_feedback}\n"
+        "\n"
         "You MUST follow the Concept Anchoring rule:\n"
         "- Identify terms belonging to Layer 4 (Systemic Processes) or Layer 5 (Molecular).\n"
         "- You are forbidden from explaining Layer 4/5 concepts using other Layer 4/5 terms.\n"
         "- You must anchor your explanation using familiar Layer 2 (Functional) or Layer 3 (Macro-Anatomical) structural blocks (e.g. lock and key, gates, soldiers, shields, factories, blueprints, engines, post offices).\n"
         "- Keep the output short, engaging, and visual.\n"
         "- If a PubMed ID (PMID: <PMID>) is present in the input scientific facts, you MUST preserve it and append it verbatim at the very bottom of your analogy output."
-    )
+    ),
+    output_key="analogy"
 )
+
