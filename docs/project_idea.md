@@ -71,8 +71,8 @@ The system is constructed as a secure, deterministic, multi-agent pipeline that 
   
   To support a dynamic, growing wiki without incurring database storage costs or requiring container redeployments, the system implements a **GitOps-driven cloud cache**:
   * **Read Path**: The agent queries the local textbook directory first. If cached definitions exist, they are loaded instantly.
-  * **Write Path**: When new topics are approved, the `SaveAgent` calls a GitHub API helper tool to push the new markdown file directly to the GitHub repository wiki.
-  * **GitOps Startup Sync**: At application startup, a sync module pulls the latest files from the GitHub repository wiki to the local directory. During unit testing (`pytest` environment), this network/credential sync is conditionally bypassed to ensure zero-hanging and fast developer test cycles.
+  * **Write Path**: When new topics are approved, the `SaveAgent` writes the file locally to the container cache and triggers the `commit_to_github` helper tool, pushing the generated Markdown file directly to the GitHub repository under `knowledge_base/` using the secure `GITHUB_PAT` credentials.
+  * **GitOps Startup Sync**: At application startup, the sync module pulls the latest files from the GitHub repository `knowledge_base/` folder to the local directory. During unit testing (`pytest` environment), this network/credential sync is conditionally bypassed to ensure zero-hanging and fast developer test cycles.
 * **The Data Control Plane (PubMed & Web Search fallback):** When dynamic clinical research or general medical definitions are requested:
   * **PubMed Tool with Resilient Fallback**: The system queries the official **NCBI Entrez Programming Utilities (E-utilities) API** (using E-Search for indexing and E-Fetch for XML). If the PubMed API is rate-limited, unavailable, or fails, the tools (`search_pubmed_with_fallback` and `fetch_and_parse_pubmed_abstract`) catch the error and automatically fall back to executing a DuckDuckGo Lite search for the abstract or concept.
   * **Web Search Fallback**: For general queries and comparisons (e.g., *"difference between Hepatitis A, B, and C"*), the agent falls back to querying **DuckDuckGo Lite** via a dependency-free HTML parser tool to retrieve high-quality textbook snippets at $0.00 infrastructure cost.
@@ -97,7 +97,11 @@ The system is constructed as a secure, deterministic, multi-agent pipeline that 
 To guarantee a **$0.00 infrastructure cost structure** suitable for rapid independent developer prototyping, the system strictly adheres to the following constraints:
 * **Budget Restriction:** All services utilized must result in a net cost of near $0.00. No paid cloud resources, premium database hosting, or expensive external indexing APIs may be used.
 * **Model Routing:** The agents utilize `gemini-2.5-flash` via developer API configurations, taking advantage of high context allotments and strict built-in rate limits that prevent runaway costs.
-* **Serverless Execution:** The application deployment is wrapped using Vertex AI’s `AgentEngineApp` template (Reasoning Engine environment) or deployed as a lightweight Docker container on Google Cloud Run. By binding the runtime to an `InMemoryArtifactService`, all operational trace payloads are held inside transient execution memory, eliminating the need for paid database servers.
+* **Serverless Execution & Ingress Protection**:
+  * **Google Cloud Run**: Deployed as a lightweight container in Cloud Run (with `--max-instances 1` capped scaling). This prevents run-away infrastructure costs from bot traffic while remaining 100% within the free tier.
+  * **IP-Based Rate Limiting**: The Flask web endpoint enforces a strict rate limit of **5 translations per minute per IP address** using `flask-limiter`, returning a `429 Too Many Requests` payload if exceeded to protect the Gemini API key from automated spam scripts.
+  * **CI/CD Build Ignored Files**: The Google Cloud Build trigger is configured to exclude `knowledge_base/**`, `docs/**`, and `README.md` from build triggers, preventing recursive container redeployment loops when the app commits new files to GitHub.
+  * **Authentication & IAM Boundaries**: System secrets (`GEMINI_API_KEY` and `GITHUB_PAT`) are injected securely via Google Secret Manager at runtime. The default compute service account is granted the `Secret Manager Secret Accessor` role, blocking public exposure.
 
 ---
 

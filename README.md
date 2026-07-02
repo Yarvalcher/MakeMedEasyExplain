@@ -37,16 +37,17 @@ To execute accurate translations without introducing factual errors, the system 
 ---
 
 ## 🧱 3. System Architecture & Technical Implementation
-* **The Ingestion & Caching Layer (OpenKB, OKF v0.1 & GitOps Sync):** Reads cached textbook definitions and commits new approved analogies directly to the GitHub repository wiki using API sync helpers. Bypasses live GitHub synchronization during local testing (`pytest` mode) to avoid authentication hangs.
+* **The Ingestion & Caching Layer (OpenKB, OKF v0.1 & GitOps Sync):** Reads cached textbook definitions, saves newly approved analogies locally, and commits them directly to the GitHub repository under the `knowledge_base/` directory using GitOps sync API helpers. Bypasses live GitHub synchronization during local testing (`pytest` mode) to avoid authentication hangs.
 * **The Data Control Plane (PubMed & Web Search fallback):** Fetches dynamic clinical data from the PubMed API (NCBI E-utilities) with automatic, resilient failover to DuckDuckGo Lite web search if PubMed is unavailable or rate-limited.
 * **Multi-Agent Orchestration Layer (Google ADK):** A deterministic `SequentialAgent` pipeline coordinating structured workflows:
   * **`classifier_agent`**: Evaluates safety and complexity using Pydantic schema queries.
   * **`FactRetrieverAgent`**: Resolves local OpenKB queries or delegates to `critic_agent` to fetch raw PubMed facts.
   * **`reviser_loop` (`LoopAgent`)**: Runs the `reviser_agent` generator and `ValidatorAgent` gate in a loop (up to 3 times). If approved, it terminates early; if all iterations fail, the pipeline blocks saving.
   * **`SaveAgent`**: Formats the approved analogy, appends citations, and commits the result.
-* **Callback Safety Guardrails**:
+* **Safety Guardrails & Rate Limiting**:
   - `before_model_callback`: Pre-LLM interception checks session state to block unsafe prompts.
   - `before_tool_callback`: Pre-tool interception enforces directory/path traversal security controls.
+  - **IP-Based Rate Limiting**: Flask server enforces a limit of **5 translations per minute per IP address** using `flask-limiter` to protect external API keys from spam bot scripts.
 
 ### 📂 3.1 Refactored Package Structure
 The codebase isolates sub-agents and tool libraries into structured folders for maximum modularity and scalability:
