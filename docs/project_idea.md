@@ -158,3 +158,4 @@ We evaluated two major patterns in the Google Agent Development Kit (ADK) for ma
 ## 📂 7. Project Documentation Index
 * [Tasks & Status](file:///c:/Users/yaros/Documents/PortfolioProjects/mademedeasyexplain/MakeMedEasyExplain/docs/tasks.md)
 * [Software Engineering Design Review](file:///c:/Users/yaros/Documents/PortfolioProjects/mademedeasyexplain/MakeMedEasyExplain/docs/design_review.md)
+* [Project Ideation (Obsidian Integration)](file:///c:/Users/yaros/Documents/PortfolioProjects/mademedeasyexplain/MakeMedEasyExplain/docs/ideation.md)
