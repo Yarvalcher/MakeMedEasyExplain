@@ -33,6 +33,19 @@ else:
 
 app = Flask(__name__, template_folder='templates')
 
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+    storage_uri="memory://",
+)
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return jsonify({"error": "Too many requests. Rate limit exceeded. Please wait a moment."}), 429
+
 def slugify(text: str) -> str:
     """Helper to generate a clean snake_case filename slug matching agent saves."""
     return re.sub(r'[^a-zA-Z0-9_]', '', text.lower().strip().replace(" ", "_").replace("-", "_"))
@@ -101,6 +114,7 @@ def is_refusal(text: str) -> bool:
     return any(phrase in text_lower for phrase in refusal_phrases)
 
 @app.route('/translate', methods=['POST'])
+@limiter.limit("5 per minute")
 async def translate():
     data = request.get_json() or {}
     query = data.get('query', '').strip()
