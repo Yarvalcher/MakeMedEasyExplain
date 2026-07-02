@@ -52,7 +52,11 @@ def save_to_knowledge_base(concept_id: str, layer: int, dependencies: list, cont
         with open(target_file, "w", encoding="utf-8") as f:
             f.write(full_text)
         indexer.reload() # Reload local memory cache index
-        return f"Saved to local wiki at knowledge_base/{clean_id}.md"
+        
+        from MMEE_Agent.tools.github_tool import commit_to_github
+        github_msg = commit_to_github(f"{clean_id}.md", full_text)
+        
+        return f"Saved to local wiki at knowledge_base/{clean_id}.md. GitOps Sync: {github_msg}"
     except Exception as e:
         return f"Failed to save file: {e}"
 
