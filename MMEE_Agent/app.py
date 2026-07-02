@@ -50,16 +50,21 @@ async def run_agent_pipeline(query: str):
     for attempt in range(max_retries):
         try:
             final_response = ""
+            last_text = ""
             # Collect asynchronous event streams from the runner
             async for event in runner.run_async(
                 user_id="user",
                 session_id=session_id,
                 new_message=types.Content(role="user", parts=[types.Part.from_text(text=query)])
             ):
+                if event.content and event.content.parts:
+                    txt = event.content.parts[0].text
+                    if txt:
+                        last_text = txt
                 if event.is_final_response():
                     if event.content and event.content.parts:
                         final_response = event.content.parts[0].text
-            return final_response
+            return final_response or last_text
         except Exception as e:
             error_str = str(e)
             if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
@@ -76,6 +81,8 @@ def index():
 
 def is_refusal(text: str) -> bool:
     """Helper to detect if the agent response is a refusal/rejection."""
+    if not text:
+        return True
     text_lower = text.lower()
     refusal_phrases = [
         "cannot respond to that",
@@ -86,7 +93,10 @@ def is_refusal(text: str) -> bool:
         "not appropriate",
         "against my safety",
         "safety guidelines",
-        "inappropriate content"
+        "inappropriate content",
+        "request blocked",
+        "error: no query metadata",
+        "error: could not generate"
     ]
     return any(phrase in text_lower for phrase in refusal_phrases)
 

@@ -110,6 +110,11 @@ Unify the agents using Google's Agent Development Kit (ADK) with a clean Supervi
     *   **Testable Assertions (TDD)**:
         *   `test_validator_agent_rejection()`: Verifies that ValidatorAgent sets `is_approved = False` on rejection.
         *   `test_save_agent_blocks_unapproved()`: Verifies that SaveAgent blocks saving when `is_approved = False`.
+*   [x] **Block 5.4: Pipeline End-to-End Test Suite**
+    *   **Description**: Mock the LLM sub-agents and execute the `SequentialAgent` pipeline end-to-end to verify state context propagation, validation loop check execution, and SaveAgent gating logic.
+    *   **Testable Assertions (TDD)**:
+        *   `test_full_pipeline_success()`: Asserts that a correct, safety-cleared, complex concept completes successfully, gathers citation facts, and saves the result.
+        *   `test_full_pipeline_blocks_unapproved_analogy()`: Asserts that non-compliant analogies fail validation and are blocked by the save agent.
 
 ---
 
@@ -166,6 +171,52 @@ Enhance fact-gathering robustness to prevent agent failures when external APIs a
 
 ---
 
+## 🐛 Bugs & Resolutions Log
+
+The following bugs were identified during the development and testing of the multi-agent pipeline and have been fully resolved:
+
+### 1. AttributeError: 'Session' object has no attribute 'history' (Resolved)
+* **Status**: fixed
+* **Symptom**: Pipeline execution crashed with `AttributeError` inside `FactRetrieverAgent._run_async_impl` when extracting the user prompt.
+* **Root Cause**: ADK v1 `Session` objects store interaction logs in the `events` attribute, not `history`.
+* **Resolution**: Replaced `ctx.session.history` references with a reversed search through `ctx.session.events`, checking for message parts where `role == "user"` or `author == "user"`.
+
+### 2. TypeError: can only concatenate str (not "Content") to str (Resolved)
+* **Status**: fixed
+* **Symptom**: Pipeline execution crashed inside `FactRetrieverAgent._run_async_impl` during the accumulation of `raw_facts` returned by `critic_agent.run_async(ctx)`.
+* **Root Cause**: The mock/real ADK `Agent` yields events where `event.content` is a `types.Content` object, which cannot be directly concatenated to Python string variables.
+* **Resolution**: Updated `FactRetrieverAgent` to iterate through the parts list (`event.content.parts`) and append the text fields.
+
+### 3. KeyError: 'Context variable not found: raw_facts' (Resolved)
+* **Status**: fixed
+* **Symptom**: The pipeline crashed inside `reviser_agent` with a `KeyError` on blocked/cached queries.
+* **Root Cause**: `SequentialAgent` does not natively stop execution when `ctx.end_invocation = True` is set. When `FactRetrieverAgent` exited early, subsequent agents were still triggered, but the expected `"raw_facts"` key was missing from the session state dict.
+* **Resolution**: 
+  1. Created a `before_agent_guardrail` callback mapping the agent context.
+  2. Registered this callback as `before_agent_callback` on `reviser_loop` and `SaveAgent` to propagate `end_invocation = True` from session state.
+  3. Added defensive defaults initialization (`raw_facts`, `audit_feedback`, `end_invocation`) in `FactRetrieverAgent._run_async_impl`.
+
+### 4. Conversational Meta-Commentary in Analogy Output (Resolved)
+* **Status**: fixed
+* **Symptom**: The agent outputted meta-explanations (e.g. *"I have translated the verified medical facts..."*) instead of only the analogy text, leading to empty markdown files in the wiki.
+* **Root Cause**: The generator LLM treated prompt constraints as conversational guidance rather than absolute output limits.
+* **Resolution**: Appended a strict constraint to the `reviser_agent` instruction: *"CRITICAL: Do NOT output conversational prefix/suffix commentary or meta-text. Output ONLY the final simplified visual analogy content itself."*
+
+### 5. Safety Refusals saved as Validated Analogies to `knowledge_base/null` (Resolved)
+* **Status**: fixed
+* **Symptom**: Inappropriate user queries (e.g. profanity) were bypass-approved, producing a final file save to `knowledge_base/null` with the text `"Error: Invalid concept_id."`.
+* **Root Cause**:
+  1. When Gemini's internal safety filters blocked the classification prompt, `classifier_agent` returned empty metadata.
+  2. `FactRetrieverAgent` detected this and set its local `ctx.end_invocation = True`, but did not propagate this flag to the shared session state.
+  3. Consequently, the downstream `SaveAgent` still ran and saved the empty analogy to the default `"concept"` fallback ID.
+  4. The web dashboard also failed to detect early pipeline exits and outputted empty success states.
+* **Resolution**:
+  1. Updated `FactRetrieverAgent` to set `ctx.session.state["end_invocation"] = True` when metadata is missing.
+  2. Enhanced `run_agent_pipeline` in `app.py` to yield the early refusal event text.
+  3. Updated `is_refusal()` in `app.py` to detect safety refusal key phrases, cleanly showing safety blocks in the web UI.
+
+---
+
 ## 🧪 Verification Plan
 
 ### Automated Tests
@@ -192,4 +243,3 @@ uv run pytest tests/integration
 ## 📂 Project Documentation Index
 * [Project Idea / Overview](file:///c:/Users/yaros/Documents/PortfolioProjects/mademedeasyexplain/MakeMedEasyExplain/docs/project_idea.md)
 * [Software Engineering Design Review](file:///c:/Users/yaros/Documents/PortfolioProjects/mademedeasyexplain/MakeMedEasyExplain/docs/design_review.md)
-* [Project Ideation](file:///c:/Users/yaros/Documents/PortfolioProjects/mademedeasyexplain/MakeMedEasyExplain/docs/ideation.md)

@@ -4,6 +4,12 @@
 
 ---
 
+## 📖 General Description
+
+**MakeMedEasyExplain** is a state-of-the-art medical education translation platform. It bridges the gap between dense scientific literature and public health understanding. The platform takes medical queries, automatically retrieves verified medical facts and PubMed clinical abstracts, simplifies the complex cellular or molecular concepts into friendly, intuitive analogies (e.g. comparing T-cells to security guards, enzymes to specific key slots), and saves these approved translations to a local, GitOps-synchronized medical wiki. Every translation is automatically audited for safety, educational anchoring compliance, and scientific accuracy before saving, preventing AI hallucinations and medical misinformation.
+
+---
+
 ## 📋 1. Executive Summary & Problem Statement
 
 ### The Challenge
@@ -120,6 +126,28 @@ MakeMedEasyExplain achieves high alignment with the Kaggle Capstone judging dime
 1. **Core Concept & Value (Agents for Good track):** It actively applies AI technology to a critical human health challenge, translating complex academic literature to maximize accessibility and combat misinformation.
 2. **Sophisticated Solution Design:** It moves away from fragile, single-prompt chat interactions. Instead, it features a clear multi-agent architecture with localized vector-equivalent lookups, custom tools, and strict automated validation guardrails.
 3. **Flagship Google Stack Proficiency:** The codebase directly implements modern 2026 AI engineering patterns, cleanly unifying the **Google ADK, Model Context Protocol (MCP) tool design patterns, Open Knowledge Format (OKF v0.1) documentation layouts, and Vertex AI Reasoning Engine deployment standards**.
+
+---
+
+## 📐 8. Architectural Design Decisions
+
+### 1. Structured Metadata Classification Schema
+To ensure robust, structured metadata routing across the multi-agent pipeline, the `classifier_agent` utilizes a strict Pydantic JSON schema:
+```python
+class QueryMetadata(BaseModel):
+    is_safe: bool = Field(description="False if the query involves inappropriate content, self-harm, medical diagnostic/treatment requests, or unsafe/off-topic themes.")
+    safety_reason: str = Field(description="Reason for safety rejection, or empty if safe.")
+    is_complex: bool = Field(description="True if the concept involves complex Layer 4/5 cellular or molecular jargon requiring analogy simplification.")
+    estimated_layer: int = Field(description="Estimated layer (1-5) matching the MakeMedEasyExplain cognitive model.")
+    core_concept: str = Field(description="The sanitized name of the core biological concept.")
+```
+
+### 2. Workflow Orchestration Pattern: Standard vs. Graph Workflows
+We evaluated two major patterns in the Google Agent Development Kit (ADK) for managing our multi-agent architecture:
+*   **Standard Workflows (Selected)**: Package execution into nested linear and loop structures (`SequentialAgent` + `LoopAgent`). This was chosen for:
+    *   *Process Simplicity*: The translation flow has a predictable linear direction with a single conditional loopback (Audit $\rightarrow$ Reviser).
+    *   *Shared State*: Easily aggregates documents, Terminology Lexicons, abstracts, and analogy draft states inside a global shared Session State dict (`ctx.session.state`).
+*   **Graph-Based Workflows (Alternative)**: Express agents as independent nodes connected by cyclic/conditional edges. While flexible, this adds significant routing mapping and data-handling boilerplate which is unnecessary for our linear translation scope.
 
 ---
 

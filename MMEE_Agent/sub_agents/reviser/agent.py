@@ -25,7 +25,8 @@ reviser_agent = Agent(
         "- You are forbidden from explaining Layer 4/5 concepts using other Layer 4/5 terms.\n"
         "- You must anchor your explanation using familiar Layer 2 (Functional) or Layer 3 (Macro-Anatomical) structural blocks (e.g. lock and key, gates, soldiers, shields, factories, blueprints, engines, post offices).\n"
         "- Keep the output short, engaging, and visual.\n"
-        "- If a PubMed ID (PMID: <PMID>) is present in the input scientific facts, you MUST preserve it and append it verbatim at the very bottom of your analogy output."
+        "- If a PubMed ID (PMID: <PMID>) is present in the input scientific facts, you MUST preserve it and append it verbatim at the very bottom of your analogy output.\n"
+        "- CRITICAL: Do NOT output conversational prefix/suffix commentary or meta-text (such as 'I have translated...', 'Here is the analogy...', or 'The request has been fully processed'). Output ONLY the final simplified visual analogy content itself."
     ),
     output_key="analogy"
 )

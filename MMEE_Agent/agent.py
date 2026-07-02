@@ -103,6 +103,10 @@ def before_model_guardrail(
 ) -> Optional[LlmResponse]:
     """Pre-LLM guardrail to block requests that fail safety checks."""
     state = callback_context.session.state
+    if state.get("end_invocation"):
+        callback_context.get_invocation_context().end_invocation = True
+        return LlmResponse(content=types.Content(parts=[types.Part.from_text(text="")]))
+        
     metadata = state.get("query_metadata")
     if metadata:
         if isinstance(metadata, str):
@@ -110,9 +114,9 @@ def before_model_guardrail(
                 metadata = json.loads(metadata)
             except Exception:
                 pass
-        
+                
         is_safe = True
-        reason = "Request blocked due to safety guidelines."
+        reason = "Inappropriate content."
         if isinstance(metadata, dict):
             is_safe = metadata.get("is_safe", True)
             reason = metadata.get("safety_reason", reason)
@@ -123,6 +127,14 @@ def before_model_guardrail(
         if not is_safe:
             return LlmResponse(content=types.Content(parts=[types.Part.from_text(text=f"Request blocked: {reason}")]))
             
+    return None
+
+
+def before_agent_guardrail(callback_context: CallbackContext) -> Optional[Event]:
+    """Bypasses agent execution if the pipeline was flagged to end early."""
+    ctx = callback_context.get_invocation_context()
+    if ctx.session.state.get("end_invocation"):
+        ctx.end_invocation = True
     return None
 
 def before_tool_guardrail(tool: Any, args: Dict[str, Any], tool_context: Any) -> Optional[Dict]:
@@ -152,10 +164,16 @@ class FactRetrieverAgent(BaseAgent):
                 pass
                 
         if not metadata:
+            ctx.session.state["end_invocation"] = True
             yield Event(author=self.name, content=types.Content(parts=[types.Part.from_text(text="Error: No query metadata found.")]))
             ctx.end_invocation = True
             return
             
+        # Initialize default values to prevent KeyError in downstream agents
+        ctx.session.state.setdefault("raw_facts", "")
+        ctx.session.state.setdefault("audit_feedback", "")
+        ctx.session.state.setdefault("end_invocation", False)
+
         is_safe = True
         reason = "Inappropriate content."
         if isinstance(metadata, dict):
@@ -166,6 +184,7 @@ class FactRetrieverAgent(BaseAgent):
             reason = getattr(metadata, "safety_reason", reason)
             
         if not is_safe:
+            ctx.session.state["end_invocation"] = True
             yield Event(author=self.name, content=types.Content(parts=[types.Part.from_text(text=f"Request blocked: {reason}")]))
             ctx.end_invocation = True
             return
@@ -176,11 +195,16 @@ class FactRetrieverAgent(BaseAgent):
         
         # Get query
         query = ""
-        if ctx.session.history:
-            for msg in reversed(ctx.session.history):
-                if msg.role == "user":
-                    query = msg.parts[0].text
-                    break
+        if ctx.session.events:
+            for msg in reversed(ctx.session.events):
+                if msg.content and msg.content.role == "user":
+                    if msg.content.parts:
+                        query = msg.content.parts[0].text
+                        break
+                elif msg.author == "user":
+                    if msg.content and msg.content.parts:
+                        query = msg.content.parts[0].text
+                        break
         if not query:
             query = concept_id
 
@@ -189,6 +213,7 @@ class FactRetrieverAgent(BaseAgent):
         if "No results found" not in local_result:
             ctx.session.state["raw_facts"] = local_result
             ctx.session.state["is_cached"] = True
+            ctx.session.state["end_invocation"] = True
             yield Event(author=self.name, content=types.Content(parts=[types.Part.from_text(text=local_result)]))
             ctx.end_invocation = True
             return
@@ -203,9 +228,11 @@ class FactRetrieverAgent(BaseAgent):
         # Call critic_agent programmatically
         raw_facts = ""
         async for event in critic_agent.run_async(ctx):
-            if event.content:
-                raw_facts += event.content
-                yield event
+            if event.content and event.content.parts:
+                for part in event.content.parts:
+                    if part.text:
+                        raw_facts += part.text
+            yield event
                 
         ctx.session.state["raw_facts"] = raw_facts
         
@@ -313,19 +340,26 @@ critic_agent.before_tool_callback = before_tool_guardrail
 # 👑 Define Parent SequentialAgent Pipeline
 # ==========================================
 
+reviser_loop = LoopAgent(
+    name="reviser_loop",
+    max_iterations=3,
+    sub_agents=[
+        reviser_agent,
+        ValidatorAgent(name="validator")
+    ]
+)
+saver = SaveAgent(name="saver")
+
+# Register agent-level callbacks to cleanly propagate early exits
+reviser_loop.before_agent_callback = before_agent_guardrail
+saver.before_agent_callback = before_agent_guardrail
+
 root_agent = SequentialAgent(
     name="MakeMedEasyExplainPipeline",
     sub_agents=[
         classifier_agent,
         FactRetrieverAgent(name="fact_retriever"),
-        LoopAgent(
-            name="reviser_loop",
-            max_iterations=3,
-            sub_agents=[
-                reviser_agent,
-                ValidatorAgent(name="validator")
-            ]
-        ),
-        SaveAgent(name="saver")
+        reviser_loop,
+        saver
     ]
 )
