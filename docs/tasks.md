@@ -125,7 +125,7 @@ Prepare the interface and deploy the unified dashboard package using Google Clou
     *   **Description**: Lightweight user interface displaying inputs, analogy outputs, and validation details.
     *   **Testable Assertions (TDD)**:
         *   `test_flask_endpoint_returns_200()`: Basic health check.
-*   [ ] **Block 6.2: Cloud Run Docker Containerization & Config**
+*   [x] **Block 6.2: Cloud Run Docker Containerization & Config**
     *   **Description**: Build a container manifest (`Dockerfile` + `.dockerignore`) packaging the Flask app, local cached wiki, and ADK pipeline, ready for one-click serverless deployment to Google Cloud Run.
     *   **Testable Assertions (TDD)**:
         *   Verify container build and verify entrypoint execution parameters.
