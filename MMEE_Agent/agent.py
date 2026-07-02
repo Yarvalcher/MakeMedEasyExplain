@@ -244,8 +244,10 @@ class ValidatorAgent(BaseAgent):
         yield Event(author=self.name, content=types.Content(parts=[types.Part.from_text(text=audit_res)]))
         
         if "APPROVED" in audit_res:
+            ctx.session.state["is_approved"] = True
             yield Event(author=self.name, actions=EventActions(escalate=True))
         else:
+            ctx.session.state["is_approved"] = False
             ctx.session.state["audit_feedback"] = audit_res
 
 
@@ -257,12 +259,30 @@ class SaveAgent(BaseAgent):
         analogy = ctx.session.state.get("analogy", "")
         raw_facts = ctx.session.state.get("raw_facts", "")
         
+        is_complex = True
         if isinstance(metadata, str):
             try:
                 metadata = json.loads(metadata)
             except Exception:
                 pass
-                
+        if isinstance(metadata, dict):
+            is_complex = metadata.get("is_complex", True)
+        elif hasattr(metadata, "is_complex"):
+            is_complex = metadata.is_complex
+
+        # Simple concepts bypass validation, complex concepts must be explicitly approved
+        is_approved = ctx.session.state.get("is_approved", not is_complex)
+        
+        if not is_approved:
+            yield Event(
+                author=self.name,
+                content=types.Content(parts=[types.Part.from_text(
+                    text="Error: Could not generate a scientifically accurate analogy that meets safety and educational standards after 3 attempts."
+                )])
+            )
+            ctx.end_invocation = True
+            return
+
         concept_id = metadata.get("core_concept", "concept") if isinstance(metadata, dict) else getattr(metadata, "core_concept", "concept")
         layer = metadata.get("estimated_layer", 4) if isinstance(metadata, dict) else getattr(metadata, "estimated_layer", 4)
         

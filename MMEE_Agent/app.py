@@ -25,8 +25,11 @@ from MMEE_Agent.tools.github_tool import sync_wiki_from_github
 
 # Synchronize local knowledge base with the GitHub Wiki at startup (GitOps sync loop)
 local_kb_dir = Path(__file__).resolve().parent.parent / "knowledge_base"
-sync_msg = sync_wiki_from_github(str(local_kb_dir))
-print(f"🔄 GitOps Startup Sync: {sync_msg}")
+if "pytest" not in sys.modules and not os.environ.get("MMEE_NO_SYNC"):
+    sync_msg = sync_wiki_from_github(str(local_kb_dir))
+    print(f"🔄 GitOps Startup Sync: {sync_msg}")
+else:
+    print("🔄 GitOps Startup Sync: Skipped (Testing/No-Sync environment detected)")
 
 app = Flask(__name__, template_folder='templates')
 

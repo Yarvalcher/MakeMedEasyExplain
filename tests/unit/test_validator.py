@@ -60,3 +60,49 @@ async def test_validator_agent_bypasses_simple_concepts():
     assert events[1].actions is not None
     assert events[1].actions.escalate is True
 
+
+@pytest.mark.anyio
+async def test_validator_agent_rejection():
+    from unittest.mock import MagicMock
+    from MMEE_Agent.agent import ValidatorAgent
+
+    agent = ValidatorAgent(name="test_validator")
+    
+    mock_ctx = MagicMock()
+    mock_ctx.session.state = {
+        "query_metadata": {"is_complex": True},
+        "analogy": "Non-compliant analogy daily advice",
+        "raw_facts": "Teeth chew food."
+    }
+    
+    events = []
+    async for event in agent._run_async_impl(mock_ctx):
+        events.append(event)
+        
+    assert mock_ctx.session.state.get("is_approved") is False
+    assert mock_ctx.session.state.get("audit_feedback") is not None
+
+
+@pytest.mark.anyio
+async def test_save_agent_blocks_unapproved():
+    from unittest.mock import MagicMock
+    from MMEE_Agent.agent import SaveAgent
+
+    agent = SaveAgent(name="test_saver")
+    
+    mock_ctx = MagicMock()
+    mock_ctx.session.state = {
+        "query_metadata": {"is_complex": True, "core_concept": "heart_valve", "estimated_layer": 4},
+        "analogy": "Bad analogy",
+        "raw_facts": "Valve description",
+        "is_approved": False
+    }
+    
+    events = []
+    async for event in agent._run_async_impl(mock_ctx):
+        events.append(event)
+        
+    assert mock_ctx.end_invocation is True
+    assert any("Error: Could not generate" in ev.content.parts[0].text for ev in events)
+
+

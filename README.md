@@ -10,7 +10,7 @@ MakeMedEasyExplain is an autonomous, multi-agent AI system built on Google Cloud
 * [1. Executive Summary & Problem Statement](#-1-executive-summary--problem-statement)
 * [2. Structural Vision: The 5-Layer Tree of Knowledge](#-2-structural-vision-the-5-layer-tree-of-knowledge)
 * [3. System Architecture & Technical Implementation](#-3-system-architecture--technical-implementation)
-* [4. Deployment Environment & Financial Sustainability](#-4-deployment-environment--financial-safety)
+* [4. Deployment Environment & Financial Safety](#-4-deployment-environment--financial-safety)
 * [5. Getting Started & Local Development](#-5-getting-started--local-development)
 * [6. Running Tests](#-6-running-tests)
 * [7. Project Documentation Index](#-7-project-documentation-index)
@@ -37,25 +37,33 @@ To execute accurate translations without introducing factual errors, the system 
 ---
 
 ## 🧱 3. System Architecture & Technical Implementation
-* **The Ingestion & Caching Layer (OpenKB, OKF v0.1 & GitOps Raw CDN):** Reads cached textbook definitions directly from the GitHub Raw CDN, caching new approved explanations locally at runtime.
-* **The Data Control Plane (PubMed & Web Search fallback):** Fetches dynamic facts from PubMed API (E-utilities) or DuckDuckGo Lite (fallback) using dependency-free, standard library parsing.
-* **The Multi-Agent Orchestration Layer (Google ADK)**: Hierarchical agent team using native `AgentTool` delegation:
-  * `llm_auditor` (Supervisor): Coordinates the pipeline, runs validation gates, and caches approved analogies.
-  * `critic_agent` (Worker): Gathers and audits facts using web and PubMed search tools to establish "scientific truth".
-  * `reviser_agent` (Worker): Translates complex medical facts into simplified visual analogies.
+* **The Ingestion & Caching Layer (OpenKB, OKF v0.1 & GitOps Sync):** Reads cached textbook definitions and commits new approved analogies directly to the GitHub repository wiki using API sync helpers. Bypasses live GitHub synchronization during local testing (`pytest` mode) to avoid authentication hangs.
+* **The Data Control Plane (PubMed & Web Search fallback):** Fetches dynamic clinical data from the PubMed API (NCBI E-utilities) with automatic, resilient failover to DuckDuckGo Lite web search if PubMed is unavailable or rate-limited.
+* **Multi-Agent Orchestration Layer (Google ADK):** A deterministic `SequentialAgent` pipeline coordinating structured workflows:
+  * **`classifier_agent`**: Evaluates safety and complexity using Pydantic schema queries.
+  * **`FactRetrieverAgent`**: Resolves local OpenKB queries or delegates to `critic_agent` to fetch raw PubMed facts.
+  * **`reviser_loop` (`LoopAgent`)**: Runs the `reviser_agent` generator and `ValidatorAgent` gate in a loop (up to 3 times). If approved, it terminates early; if all iterations fail, the pipeline blocks saving.
+  * **`SaveAgent`**: Formats the approved analogy, appends citations, and commits the result.
+* **Callback Safety Guardrails**:
+  - `before_model_callback`: Pre-LLM interception checks session state to block unsafe prompts.
+  - `before_tool_callback`: Pre-tool interception enforces directory/path traversal security controls.
 
 ### 📂 3.1 Refactored Package Structure
 The codebase isolates sub-agents and tool libraries into structured folders for maximum modularity and scalability:
 ```text
 MMEE_Agent/
-├── agent.py               # Root Entry Point (llm_auditor supervisor configuration)
+├── agent.py               # Root Entry Point (MakeMedEasyExplainPipeline SequentialAgent)
+├── app.py                 # Flask Server & Dashboard Engine
 ├── sub_agents/            # Agent Configuration Folder
+│   ├── classifier/
+│   │   └── agent.py       # classifier_agent (Pydantic query metadata classifier)
 │   ├── critic/
-│   │   └── agent.py       # critic_agent (connected to search & PubMed tools)
+│   │   └── agent.py       # critic_agent (connected to PubMed tools)
 │   └── reviser/
 │       └── agent.py       # reviser_agent (simplification educator)
 └── tools/                 # Standalone Tool Utilities Folder
     ├── educator.py        # concept anchoring & layer maps checks
+    ├── github_tool.py     # GitOps commit & sync utils
     ├── openkb_loader.py   # local OpenKB textbook indexer
     ├── pubmed_tool.py     # PubMed API E-utilities fetchers
     ├── search_tool.py     # DuckDuckGo Lite free scraping search
@@ -116,13 +124,9 @@ MMEE_Agent/
 ---
 
 ## 🧪 6. Running Tests
-The project relies on Test-Driven Development (TDD). 
+The project relies on Test-Driven Development (TDD).
 
-To run the complete test suite (unit and integration tests):
-```bash
-uv run pytest
-```
-To run only unit tests:
+To run the complete test suite (unit tests only):
 ```bash
 uv run pytest tests/unit
 ```
