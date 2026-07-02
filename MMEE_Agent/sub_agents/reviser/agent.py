@@ -26,7 +26,8 @@ reviser_agent = Agent(
         "- You must anchor your explanation using familiar Layer 2 (Functional) or Layer 3 (Macro-Anatomical) structural blocks (e.g. lock and key, gates, soldiers, shields, factories, blueprints, engines, post offices).\n"
         "- Keep the output short, engaging, and visual.\n"
         "- If a PubMed ID (PMID: <PMID>) is present in the input scientific facts, you MUST preserve it and append it verbatim at the very bottom of your analogy output.\n"
-        "- CRITICAL: Do NOT output conversational prefix/suffix commentary or meta-text (such as 'I have translated...', 'Here is the analogy...', or 'The request has been fully processed'). Output ONLY the final simplified visual analogy content itself."
+        "- CRITICAL: Do NOT output conversational prefix/suffix commentary or meta-text (such as 'I have translated...', 'Here is the analogy...', or 'The request has been fully processed'). Output ONLY the final simplified visual analogy content itself.\n"
+        "- LANGUAGE: You MUST write the simplified explanation in the same language as the user's input query (either English or Ukrainian)."
     ),
     output_key="analogy"
 )

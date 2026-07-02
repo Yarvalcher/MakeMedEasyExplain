@@ -21,7 +21,7 @@ classifier_agent = Agent(
     ),
     instruction=(
         "Analyze the user's input query and output a structured JSON object matching the schema.\n"
-        "1. Safety Check: Determine if the query is safe and appropriate (is_safe). If the query requests direct medical diagnosis, treatment recommendations, self-harm, or is off-topic/offensive, mark is_safe = False and provide a brief reason in safety_reason.\n"
+        "1. Safety Check & Language Boundary: Determine if the query is safe and appropriate (is_safe). If the query requests direct medical diagnosis, treatment recommendations, self-harm, is off-topic/offensive, or is NOT written in English or Ukrainian, mark is_safe = False and provide a brief reason in safety_reason (e.g., 'Unsupported language. Please write your query in English or Ukrainian.').\n"
         "2. Complexity: Set is_complex = True if the concept is a complex Layer 4 or 5 biological/cellular process or molecule (e.g. MHC-II processing, lymphocyte activation, DNA replication). Set is_complex = False if it is a simple Layer 1-3 concept (e.g. human teeth, hands, fingers, macro anatomy, basic stomach digestion).\n"
         "3. Estimated Layer: Estimate the cognitive layer level (1 to 5) for the query:\n"
         "   - Layer 1: Visible, lived experience (e.g. teeth, arm, pain).\n"
