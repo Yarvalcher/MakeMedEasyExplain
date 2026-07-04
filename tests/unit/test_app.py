@@ -31,3 +31,13 @@ def test_rate_limiting_returns_429(mock_pipeline, client):
     res = client.post('/translate', json={"query": "heart attack"})
     assert res.status_code == 429
     assert b"Rate limit exceeded" in res.data
+
+def test_static_endpoints(client):
+    """Verifies that robots.txt and favicon.ico are served successfully."""
+    res = client.get('/robots.txt')
+    assert res.status_code == 200
+    assert b"User-agent" in res.data
+    
+    res = client.get('/favicon.ico')
+    assert res.status_code == 200
+

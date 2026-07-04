@@ -46,6 +46,15 @@ limiter = Limiter(
 def ratelimit_handler(e):
     return jsonify({"error": "Too many requests. Rate limit exceeded. Please wait a moment."}), 429
 
+@app.route('/robots.txt')
+def robots():
+    return app.send_static_file('robots.txt')
+
+
+@app.route('/favicon.ico')
+def favicon():
+    return app.send_static_file('favicon.ico')
+
 def slugify(text: str) -> str:
     """Helper to generate a clean snake_case filename slug matching agent saves."""
     return re.sub(r'[^a-zA-Z0-9_]', '', text.lower().strip().replace(" ", "_").replace("-", "_"))
