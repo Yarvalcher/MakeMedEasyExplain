@@ -1,13 +1,9 @@
 ---
 concept_id: hemophilia_a_and_b
-layer: 5
+layer: 4
 dependencies:
 ---
-When you get a cut, your body is like a construction crew trying to build a quick "dam" (a blood clot) to stop the leak. For this dam to form, many specialized "building blocks" or "workers" need to connect in a specific order.
+Think of your blood's ability to stop bleeding like a puzzle. When you get a cut, your body needs to quickly assemble special "puzzle pieces" (clotting factors) to form a plug and stop the leak. With hemophilia A and B, it's like some of these crucial puzzle pieces are missing or don't fit right, making it hard to finish the puzzle and stop the bleeding. Scientists are actively looking for new ways to find or fix these missing pieces.
+PMID: 42448015, 42438295, 42415686
 
-In **Hemophilia**, the instructions for making some of these vital workers are missing or faulty because of a genetic blueprint passed down through families.
-
-*   In **Hemophilia A**, the essential "building block" known as **Factor VIII (Factor 8)** is missing or doesn't work well. Think of it like a crucial connecting piece that isn't there.
-*   In **Hemophilia B**, a *different* essential "building block" called **Factor IX (Factor 9)** is missing or faulty. This is like a different key starter piece for the dam's foundation.
-
-Both types mean the dam can't be built properly or quickly, leading to **prolonged bleeding**. Doctors need special "blueprints" (tests) to identify exactly which specific building block is the problem.
+Source: [PubMed ID: 42448015](https://pubmed.ncbi.nlm.nih.gov/42448015/)
